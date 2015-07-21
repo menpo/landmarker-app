@@ -1,37 +1,38 @@
 'use strict';
 
+// require('crash-reporter').start();
+
 var app = require('app');
 var BrowserWindow = require('browser-window');
 var dialog = require('dialog');
 var ipc = require('ipc');
-
-// report crashes to the Electron project
-require('crash-reporter').start();
-// adds debug features like hotkeys for triggering dev tools and reload
-// require('electron-debug')();
+var Menu = require('menu');
+var MenuItem = require('menu-item');
 
 require('electron-compile').init();
 
-var mainWindow; // prevent window being GC'd
+var APP_NAME = 'Landmarker';
+var INDEX = 'file://' + __dirname + '/app/index.html';
+
+var mainWindow;
 
 function createMainWindow () {
-    var win = new BrowserWindow({
+
+    var _window = new BrowserWindow({
+        title: APP_NAME,
         width: 1200,
         height: 960,
         center: true,
-        resizable: true,
-        title: 'Landmarker'
+        resizable: true
     });
 
-    win.loadUrl(`file://${__dirname}/app/index.html`);
-    win.on('closed', onClosed);
-
-    return win;
+    _window.loadUrl(INDEX);
+    _window.on('closed', onClosed);
+    _window.openDevTools();
+    return _window;
 }
 
 function onClosed () {
-    // deref the window
-    // for multiple windows store them in an array
     mainWindow = null;
 }
 
@@ -50,14 +51,28 @@ app.on('activate-with-no-open-windows', function () {
 app.on('ready', function () {
     mainWindow = createMainWindow();
 });
+ipc.on('close', function () {
+    app.quit()
+});
 
 ipc.on('fs-backend-select-assets', function () {
     dialog.showOpenDialog(mainWindow, {
         title: 'Select Assets Folder',
-        properties: [ 'openDirectory' ]
+        properties: ['openDirectory']
     }, function (filenames) {
         if (filenames) {
             mainWindow.send('fs-backend-selected-assets', filenames);
+        }
+    });
+});
+
+ipc.on('fs-backend-select-template', function (exts) {
+    dialog.showOpenDialog(mainWindow, {
+        title: 'Select Template',
+        properties: ['openFile']
+    }, function (filenames) {
+        if (filenames) {
+            mainWindow.send('fs-backend-selected-template', filenames);
         }
     });
 });
