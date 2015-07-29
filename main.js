@@ -6,8 +6,6 @@ var app = require('app');
 var BrowserWindow = require('browser-window');
 var dialog = require('dialog');
 var ipc = require('ipc');
-var Menu = require('menu');
-var MenuItem = require('menu-item');
 
 require('electron-compile').init();
 
@@ -23,7 +21,10 @@ function createMainWindow () {
         width: 1200,
         height: 960,
         center: true,
-        resizable: true
+        resizable: true,
+        'web-preferences': {
+            webgl: true
+        }
     });
 
     _window.loadUrl(INDEX);
@@ -58,18 +59,23 @@ ipc.on('close', function () {
 ipc.on('fs-backend-select-assets', function () {
     dialog.showOpenDialog(mainWindow, {
         title: 'Select Assets Folder',
-        properties: ['openDirectory']
+        properties: ['openFile', 'openDirectory', 'multiSelections']
     }, function (filenames) {
         if (filenames) {
             mainWindow.send('fs-backend-selected-assets', filenames);
+        } else {
+            mainWindow.send('cancel-fs-assets-select');
         }
     });
 });
 
-ipc.on('fs-backend-select-template', function (exts) {
+ipc.on('fs-backend-select-template', function () {
     dialog.showOpenDialog(mainWindow, {
         title: 'Select Template',
-        properties: ['openFile']
+        properties: ['openFile', 'multiSelections'],
+        filters: [{
+            name: 'Templates', extensions: ['yaml', 'yml', 'json', 'ljson']
+        }]
     }, function (filenames) {
         if (filenames) {
             mainWindow.send('fs-backend-selected-template', filenames);
