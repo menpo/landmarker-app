@@ -4,34 +4,35 @@ import ipc from 'ipc';
 
 import THREE from 'three';
 import $ from 'jquery';
+import drop from 'drag-drop';
 
-import Config from '../landmarker.io/src/js/app/model/config';
-import KSH from '../landmarker.io/src/js/app/view/keyboard';
-import { notify, AssetLoadingNotification } from '../landmarker.io/src/js/app/view/notification';
+import Config from '../../landmarker.io/src/js/app/model/config';
+import KSH from '../../landmarker.io/src/js/app/view/keyboard';
+import {
+    notify,
+    AssetLoadingNotification
+} from '../../landmarker.io/src/js/app/view/notification';
+import Modal from '../../landmarker.io/src/js/app/view/modal';
+import App from '../../landmarker.io/src/js/app/model/app';
+import Server from '../../landmarker.io/src/js/app/backend/server';
+import HelpOverlay from '../../landmarker.io/src/js/app/view/help';
+import * as AssetView from '../../landmarker.io/src/js/app/view/asset';
+import SidebarView from '../../landmarker.io/src/js/app/view/sidebar';
+import ToolbarView from '../../landmarker.io/src/js/app/view/toolbar';
+import ViewportView from '../../landmarker.io/src/js/app/view/viewport';
 
-import Modal from '../landmarker.io/src/js/app/view/modal';
-import App from '../landmarker.io/src/js/app/model/app';
-import Server from '../landmarker.io/src/js/app/backend/server';
-import HelpOverlay from '../landmarker.io/src/js/app/view/help';
-import * as AssetView from '../landmarker.io/src/js/app/view/asset';
-import SidebarView from '../landmarker.io/src/js/app/view/sidebar';
-import ToolbarView from '../landmarker.io/src/js/app/view/toolbar';
-import ViewportView from '../landmarker.io/src/js/app/view/viewport';
+import FSBackend from './fs_backend';
+import Intro from './app_intro';
+import bus, * as EVENTS from './bus';
+import makeMenu from './menu';
 
-import FSBackend from './js/fs_backend';
-import Intro from './js/app_intro';
-import bus, * as EVENTS from './js/bus';
-import makeMenu from './js/menu';
+let cfg, server, app, viewport;
 
-const cfg = Config();
-
-let server, app, viewport;
-
+// Initialise the app and standard Landmarker.io
 function init (server, mode) {
 
-    console.log('init');
+    unbindIntro();
 
-    unbindAfterStartup();
     THREE.ImageUtils.crossOrigin = '';
     app = new App({server, mode});
 
@@ -48,7 +49,6 @@ function init (server, mode) {
     let prevAsset = null;
 
     app.on('change:asset', function () {
-       console.log('Index: the asset has changed');
         viewport.removeMeshIfPresent();
         if (prevAsset !== null) {
             // clean up previous asset
@@ -57,24 +57,33 @@ function init (server, mode) {
         prevAsset = app.asset();
     });
 
-    server.on('change:assets', function () {
-        if (app) app._initCollections();
+    bus.on(EVENTS.FS_CHANGED_ASSETS, function (goToLast) {
+        if (app) {
+            app._initCollections();
+        }
+    });
+
+    $('#collectionName').text(app.get('activeCollection'));
+    app.on('change:activeCollection', function () {
+        $('#collectionName').text(app.get('activeCollection'));
     });
 
     makeMenu();
 
-    bus.on(EVENTS.SHOW_HELP, function () {
-        if (app) app.toggleHelpOverlay();
-    });
-
+    bindDragAndDrop();
     (new KSH(app, viewport)).enable();
 }
 
-function bindForStartup () {
+// Show the backend selection screen and bind related events
+function bindIntro () {
+
+    Intro.open();
+    cfg.clear();
 
     bus.on(EVENTS.START_WITH_SERVER, function (url) {
         server = new Server(url);
         server.fetchMode().then(function (mode) {
+            $('#changeAssets').remove();
             init(server, mode);
         }, function (err) {
             console.log(err);
@@ -82,27 +91,27 @@ function bindForStartup () {
     });
 
     bus.on(EVENTS.START_WITH_FS, function (mode) {
-        server = new FSBackend();
+        server = new FSBackend(cfg);
         server.setMode(mode);
-
-        server.on('ready', function () {
-            console.log('ready');
-            server.off('ready');
-            init(server, mode);
-        });
-
-        server.initialize();
+        $('#changeAssets').click(changeAssets);
+        server.selectAssets()
     });
-
 }
 
-function unbindAfterStartup () {
+// Disable events after app has started
+function unbindIntro () {
     bus.removeAllListeners(EVENTS.START_WITH_SERVER);
     bus.removeAllListeners(EVENTS.START_WITH_FS);
 }
 
+// Bind global events
+// ----------------------------------------------------------------------------
+//
 function _changeAssets () {
-    if (server) server.selectAssets();
+    if (server) {
+        cfg.clear();
+        server.selectAssets();
+    }
 }
 
 function changeAssets () {
@@ -110,22 +119,13 @@ function changeAssets () {
         'Are you sure you want to change current assets collection ?', _changeAssets);
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    Intro.init({cfg});
-    bindForStartup();
-    $('#changeAssets').click(changeAssets);
-    Intro.open();
-});
-
-bus.on(EVENTS.RESTART, function () {
-    window.location.reload();
-});
+bus.on(EVENTS.RESTART, () => window.location.reload());
 
 bus.on(EVENTS.OPEN_FILES, _changeAssets);
 
 bus.on(EVENTS.OPEN_TEMPLATE, function () {
 
-    if (!server) return;
+    if (!server && typeof server.pickTemplate !== 'function') return;
 
     server.pickTemplate((name) => {
         app.set('_activeTemplate', name);
@@ -137,18 +137,59 @@ bus.on(EVENTS.OPEN_TEMPLATE, function () {
     }, true);
 });
 
+// Leverage the setup we have in standard landmarker by clicking on existing
+// links
 bus.on(EVENTS.SAVE, function () {
-    if (app && app.landmarks()) {
-        $('#save').click();
-    }
+    if (app && app.landmarks()) $('#save').click();
 });
 
 bus.on(EVENTS.EXPORT, function () {
-    if (app && app.landmarks()) {
-        $('#download').click();
+    if (app && app.landmarks()) $('#download').click();
+});
+
+bus.on(EVENTS.SHOW_HELP, function () {
+    if (app) app.toggleHelpOverlay();
+});
+
+bus.on(EVENTS.FS_NEW_TEMPLATE, function (name) {
+    if (app) {
+        if (name) app.set('_activeTemplate', name);
+        app._initTemplates();
     }
 });
 
 ipc.on('cancel-fs-assets-select', function () {
-    if (!app) Intro.open();
+    if (!app) {
+        unbindIntro();
+        bindIntro();
+    }
+});
+
+function bindDragAndDrop () {
+    if (server instanceof FSBackend) {
+        dragDropRemove = drop('body', server.handleDragDrop.bind(server));
+    }
+}
+
+bus.on(EVENTS.FS_READY, function () {
+    bus.removeAllListeners(EVENTS.FS_READY);
+    init(server, server.mode);
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    cfg = Config();
+    cfg.load();
+    Intro.init({cfg});
+
+    if (cfg.get('BACKEND_TYPE') === FSBackend.Type) {
+        server = new FSBackend(cfg);
+        server.setMode(cfg.get('FS_MODE'));
+        if (cfg.get('FS_ASSETS')) {
+            return server.setAssets(cfg.get('FS_ASSETS')).then(function () {
+                notify({type: 'success', msg: 'Restarted from cached data'});
+            }, bindIntro);
+        }
+    }
+    bindIntro();
 });

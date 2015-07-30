@@ -1,5 +1,4 @@
 'use strict';
-
 // require('crash-reporter').start();
 
 var app = require('app');

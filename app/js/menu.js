@@ -6,16 +6,6 @@ const Menu = remote.require('menu');
 
 import bus, * as EVENTS from './bus';
 
-const _triggers = {};
-function makeTrigger (evtType) {
-    if (!_triggers[evtType]) {
-        _triggers[evtType] = function () {
-            bus.emit(evtType);
-        }
-    }
-    return _triggers[evtType];
-}
-
 const emptyMenu = [{
     label: 'Landmarker',
     submenu: [{
@@ -90,7 +80,7 @@ const mainMenu = [{
     }, {
         label: 'Restart',
         accelerator: 'Super+R',
-        click: makeTrigger(EVENTS.RESTART)
+        click: () => bus.emit(EVENTS.RESTART)
     }, {
         label: 'Quit',
         accelerator: 'Command+Q',
@@ -103,25 +93,25 @@ const mainMenu = [{
     submenu: [{
         label: 'Open files',
         accelerator: 'Super+O',
-        click: makeTrigger(EVENTS.OPEN_FILES)
+        click: () => bus.emit(EVENTS.OPEN_FILES)
     }, {
         label: 'Save',
         accelerator: 'Super+S',
-        click: makeTrigger(EVENTS.SAVE)
+        click: () => bus.emit(EVENTS.SAVE)
     }, {
         label: 'Export',
         accelerator: 'Super+Shift+S',
-        click: makeTrigger(EVENTS.EXPORT)
+        click: () => bus.emit(EVENTS.EXPORT)
     }, {
         label: 'Open Template',
         accelerator: 'Super+T',
-        click: makeTrigger(EVENTS.OPEN_TEMPLATE)
+        click: () => bus.emit(EVENTS.OPEN_TEMPLATE)
     }]
 }, {
     label: 'Help',
     submenu: [{
         label: 'Keyboard Shortcuts',
-        click: makeTrigger(EVENTS.SHOW_HELP)
+        click: () => bus.emit(EVENTS.SHOW_HELP)
     }, {
         label: 'User Guide',
         click: function() {

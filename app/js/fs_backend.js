@@ -1,9 +1,8 @@
 'use strict';
 
 import fs from 'fs';
-import path from 'path';
+import Path from 'path';
 
-import Backbone from 'backbone';
 import Promise from 'promise-polyfill';
 import _ from 'underscore';
 import THREE from 'three';
@@ -23,12 +22,14 @@ import { notify, loading } from '../../landmarker.io/src/js/app/view/notificatio
 import OBJLoader from '../../landmarker.io/src/js/app/lib/obj_loader';
 import STLLoader from '../../landmarker.io/src/js/app/lib/stl_loader';
 
-import bus from './bus';
-import {RESTART} from './bus';
+import bus, * as EVENTS from './bus';
 
 const IMAGE_EXTENSIONS = ['jpeg', 'jpg', 'png'];
 const MESH_EXTENSIONS = ['obj', 'stl'];
 
+// promise-polyfill doesn't expose the 'any' function so this is a replacement
+// which resolves with the first resolving promise in the array or rejects
+// with all the errors (by throwing the array)
 function _anyPromise (array) {
 
     // Record the results of promises
@@ -60,22 +61,65 @@ const FSBackend = Base.extend('FS', function (cfg) {
     this._assets = [];
     this._assetsProps = {};
     this.mode = 'image';
-    this._collectionId = undefined;
+    this._collection = '/ - (0)';
+    this._prefix = '/';
 
     this._templates = Template.loadDefaultTemplates();
     this._templatesPaths = {};
 
     this._cfg = cfg;
 
-    _.extend(this, Backbone.Events);
+    this._cfg.set({
+        'BACKEND_TYPE': FSBackend.Type
+    }, true);
+
     ipc.on('fs-backend-selected-template', this.addTemplates.bind(this));
     ipc.on('fs-backend-selected-assets', this.setAssets.bind(this));
 });
 
 export default FSBackend;
 
-FSBackend.prototype.initialize = function () {
-    this.selectAssets();
+function commonPrefix (path1, path2) {
+    const arr1 = path1.split(Path.sep);
+    const arr2 = path2.split(Path.sep);
+
+    let i;
+    for (i = 0; i < Math.min(arr1.length, arr2.length); i++) {
+        if (arr1[i] !== arr2[i]) {
+            break;
+        }
+    }
+
+    return arr1.slice(0, i).join(Path.sep);
+}
+
+FSBackend.prototype.computeCollection = function () {
+    let prefix = this._assets[0];
+
+    let i = 0;
+    for (i = 1; i < this._assets.length; i++) {
+        prefix = commonPrefix(prefix, this._assets[i]);
+        if (prefix === '') {
+            break;
+        }
+    }
+
+    this._prefix = prefix;
+    this._collection = `${prefix} - (${this._assets.length} assets)`;
+    bus.emit(EVENTS.FS_CHANGED_ASSETS);
+
+    this._cfg.set({
+        FS_ASSETS: this._assets
+    }, true);
+
+};
+
+FSBackend.prototype.idFromPath = function (path) {
+    return path.replace(this._prefix, '');
+};
+
+FSBackend.prototype.pathFromId = function (assetId) {
+    return this._prefix + assetId;
 };
 
 FSBackend.prototype.setMode = function (mode) {
@@ -84,6 +128,8 @@ FSBackend.prototype.setMode = function (mode) {
     } else {
         this.mode = this.mode || 'image';
     }
+
+    this._cfg.set({FS_MODE: this.mode}, true);
 };
 
 FSBackend.prototype.selectAssets = function () {
@@ -98,7 +144,7 @@ FSBackend.prototype.pickTemplate = function (success, error) {
     ipc.send('fs-backend-select-template');
 };
 
-FSBackend.prototype.isValidExtension = function (ext) {
+FSBackend.prototype.isValidAssetExtension = function (ext) {
     const exts = this.mode === 'mesh' ? MESH_EXTENSIONS : IMAGE_EXTENSIONS;
     return exts.indexOf(ext) > -1;
 };
@@ -112,15 +158,15 @@ FSBackend.prototype.setAssets = function (files) {
 
     const async = loading.start();
 
-    files.forEach((apath) => {
+    files.forEach((path) => {
         promises.push(new Promise((resolve) => {
-            fs.stat(apath, (err, stats) => {
+            fs.stat(path, (err, stats) => {
                 if (stats.isDirectory()) {
-                    resolve(this.setDirectoryAsset(apath));
+                    resolve(this.setDirectoryAsset(path));
                 } else {
-                    const ext = extname(apath);
-                    if (this.isValidExtension(ext)) {
-                        resolve(this.setFileAsset(apath));
+                    const ext = extname(path);
+                    if (this.isValidAssetExtension(ext)) {
+                        resolve(this.setFileAsset(path));
                     }
                 }
             });
@@ -130,36 +176,34 @@ FSBackend.prototype.setAssets = function (files) {
     return Promise.all(promises).then((results) => {
         loading.stop(async);
         if (this._assets.length) {
-            this._collectionId = Date.now();
-            this.trigger('change:assets');
-            this.trigger('ready');
+            this.computeCollection();
+            bus.emit(EVENTS.FS_READY);
         } else {
             notify({type: 'error', msg: `No suitable asset found`});
-            bus.emit(RESTART);
         }
     });
 };
 
-FSBackend.prototype.setFileAsset = function (fpath) {
+FSBackend.prototype.setFileAsset = function (path) {
     if (this.mode === 'mesh') {
-        return this._setMeshAsset(fpath);
+        return this._setMeshAsset(path);
     } else {
-        return this._setImageAsset(fpath);
+        return this._setImageAsset(path);
     }
 };
 
-FSBackend.prototype.setDirectoryAsset = function (dpath) {
+FSBackend.prototype.setDirectoryAsset = function (path) {
     const async = loading.start();
     return new Promise((resolve, reject) => {
         const files = [];
-        fs.readdir(dpath, (err, data) => {
+        fs.readdir(path, (err, data) => {
             if (err) {
                 reject(err);
             } else {
                 data.forEach((fname) => {
                     const ext = extname(fname);
-                    const fpath = path.join(dpath,fname);
-                    if (this.isValidExtension(ext)) {
+                    const fpath = Path.join(path,fname);
+                    if (this.isValidAssetExtension(ext)) {
                         files.push(this.setFileAsset(fpath));
                     }
                 });
@@ -171,16 +215,16 @@ FSBackend.prototype.setDirectoryAsset = function (dpath) {
     });
 };
 
-FSBackend.prototype._setMeshAsset = function (filepath) {
-    this._assets.push(filepath);
-    this._assetsProps[filepath] = {path: filepath};
+FSBackend.prototype._setMeshAsset = function (path) {
+    this._assets.push(path);
+    this._assetsProps[path] = {path: path};
 
     let ext, tpath;
     for (let i = 0; i < IMAGE_EXTENSIONS.length; i++) {
         ext = IMAGE_EXTENSIONS[i];
-        tpath = stripExtension(filepath) + '.' + ext;
+        tpath = stripExtension(path) + '.' + ext;
         if (fs.existsSync(tpath)) {
-            this._assetsProps[filepath].texturePath = tpath;
+            this._assetsProps[path].texturePath = tpath;
             break;
         }
     }
@@ -261,11 +305,11 @@ FSBackend.prototype.fetchTemplates = function () {
 };
 
 FSBackend.prototype.fetchCollections = function () {
-    return Promise.resolve([this._collectionId]);
+    return Promise.resolve([this._collection]);
 };
 
 FSBackend.prototype.fetchCollection = function () {
-    return Promise.resolve(this._assets);
+    return Promise.resolve(this._assets.map(p => this.idFromPath(p)));
 };
 
 FSBackend.prototype.fetchThumbnail = function () {
@@ -275,52 +319,54 @@ FSBackend.prototype.fetchThumbnail = function () {
 FSBackend.prototype.fetchImg = function (fpath) {
     const async = loading.start();
     return new Promise((resolve, reject) => {
-        console.time(`FSBackend#fetchImg#${fpath}`);
-        const nativeImage = NativeImage.createFromPath(fpath);
-        if (nativeImage && !nativeImage.isEmpty()) {
-            const img = new Image();
-
-            img.addEventListener('load', function () {
-                const texture = new THREE.Texture(undefined);
-                texture.sourceFile = img.src;
-                texture.minFilter = THREE.LinearFilter;
-                texture.image = img;
-                texture.needsUpdate = true;
+        fs.readFile(fpath, (err, data) => {
+            if (err) {
                 loading.stop(async);
-                console.timeEnd(`FSBackend#fetchImg#${fpath}`);
-                resolve(new THREE.MeshBasicMaterial({map: texture}));
-            });
+                reject(err);
+            } else {
+                const img = new Image();
 
-            img.src = nativeImage.toDataUrl();
-        } else {
-            loading.stop(async);
-            console.timeEnd(`FSBackend#fetchImg#${fpath}`);
-            reject();
-        }
+                img.addEventListener('load', function () {
+                    const texture = new THREE.Texture(undefined);
+                    texture.sourceFile = img.src;
+                    texture.minFilter = THREE.LinearFilter;
+                    texture.image = img;
+                    texture.needsUpdate = true;
+                    loading.stop(async);
+                    window.URL.revokeObjectURL(img.src);
+                    resolve(new THREE.MeshBasicMaterial({map: texture}));
+                });
+
+                const encoded = data.toString('base64');
+                const src = `data:image/${extname(fpath)};base64,${encoded}`;
+                img.src = src;
+            }
+        });
     });
 };
 
 FSBackend.prototype.fetchTexture = function (assetId) {
+    const assetPath = this.pathFromId(assetId);
     if (this.mode === 'mesh') {
-        if (this._assetsProps[assetId].texturePath) {
-            return this.fetchImg(this._assetsProps[assetId].texturePath);
+        if (this._assetsProps[assetPath].texturePath) {
+            return this.fetchImg(this._assetsProps[assetPath].texturePath);
         } else {
             return Promise.reject(null);
         }
     } else {
-        return this.fetchImg(assetId);
+        return this.fetchImg(assetPath);
     }
 };
 
 FSBackend.prototype.fetchGeometry = function (assetId) {
     console.time(`FSBackend#fetchGeometry#${assetId}`);
+    const assetPath = this.pathFromId(assetId);
     const q = new Promise((resolve, reject) => {
-        fs.readFile(assetId, (err, data) => {
+        fs.readFile(assetPath, (err, data) => {
             if (err) {
                 reject(err);
             } else {
-                const ext = extname(assetId);
-                window.meshData = data;
+                const ext = extname(assetPath);
                 if (ext === 'obj') {
                     resolve(OBJLoader(data.toString()));
                 } else if (ext === 'stl') {
@@ -346,8 +392,7 @@ FSBackend.prototype.fetchGeometry = function (assetId) {
 };
 
 FSBackend.prototype.fetchLandmarkGroup = function (id, type) {
-
-    const fpath = `${id}_${type}.ljson`;
+    const fpath = `${this.pathFromId(id)}_${type}.ljson`;
     const dims = this.mode === 'mesh' ? 3 : 2;
     const tmpl = this._templates[type];
     const async = loading.start();
@@ -373,7 +418,7 @@ FSBackend.prototype.fetchLandmarkGroup = function (id, type) {
 };
 
 FSBackend.prototype.saveLandmarkGroup = function (id, type, json) {
-    const fpath = `${id}_${type}.ljson`;
+    const fpath = `${this.pathFromId(id)}_${type}.ljson`;
     const async = loading.start();
     return new Promise((resolve, reject) => {
         fs.writeFile(fpath, JSON.stringify(json), 'utf8', (err) => {
@@ -386,4 +431,62 @@ FSBackend.prototype.saveLandmarkGroup = function (id, type, json) {
             }
         })
     });
+};
+
+const DROP_TYPE = {
+    ASSET: 'ASSET',
+    TEMPLATE: 'TEMPLATE'
+}
+
+// Handle the drag and drop logic for assets and templates:
+// - only one type of files at a time (ignore anything that does not
+//   match the first recognized type)
+FSBackend.prototype.handleDragDrop = function (files) {
+
+    let dropType, ext;
+    const async = loading.stop(async);
+    const promises = [];
+
+    files.forEach((file, i) => {
+        ext = extname(file.name);
+
+        if (!dropType) {
+            if (this.isValidAssetExtension(ext)) {
+                dropType = DROP_TYPE.ASSET;
+            } else if (ext in Template.Parsers) {
+                dropType = DROP_TYPE.TEMPLATE;
+            }
+        }
+
+        if (dropType === DROP_TYPE.ASSET) {
+            if (this._assets.indexOf(file.path) === -1) {
+                promises.push(Promise.resolve(this.setFileAsset(file.path)));
+            } else {
+                notify({msg: `Asset ${file.name} already exists`});
+            }
+        } else if (dropType === DROP_TYPE.TEMPLATE) {
+            promises.push(this.addTemplate(file.path));
+        } else {
+            console.log('Drag/Drop: ignoring', file.path);
+        }
+    });
+
+    if (promises.length === 0) {
+        console.log('Drag/Drop: nothing to do');
+        return null;
+    }
+
+    _anyPromise(promises).then((result) => {
+        loading.stop(async);
+        if (dropType === DROP_TYPE.ASSET) {
+            this.computeCollection(true);
+        } else if (dropType === DROP_TYPE.TEMPLATE) {
+            notify({type: 'success', msg: 'Successfully imported templates'});
+            bus.emit(EVENTS.FS_NEW_TEMPLATE, result);
+        }
+    }, (errs) => {
+        loading.stop(async);
+        console.log(`Failed to process dropped content`, errs);
+    });
+
 };
