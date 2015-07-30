@@ -167,7 +167,7 @@ ipc.on('cancel-fs-assets-select', function () {
 
 function bindDragAndDrop () {
     if (server instanceof FSBackend) {
-        dragDropRemove = drop('body', server.handleDragDrop.bind(server));
+        drop('body', server.handleDragDrop.bind(server));
     }
 }
 

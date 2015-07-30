@@ -8,7 +8,6 @@ import _ from 'underscore';
 import THREE from 'three';
 
 import ipc from 'ipc';
-import * as NativeImage from 'native-image';
 
 import {
     randomString, basename, extname, stripExtension, baseUrl

@@ -1,12 +1,11 @@
 'use strict';
-// require('crash-reporter').start();
 
 var app = require('app');
 var BrowserWindow = require('browser-window');
 var dialog = require('dialog');
 var ipc = require('ipc');
 
-require('electron-compile').init();
+require('crash-reporter').start();
 
 var APP_NAME = 'Landmarker';
 var INDEX = 'file://' + __dirname + '/app/index.html';
@@ -28,7 +27,7 @@ function createMainWindow () {
 
     _window.loadUrl(INDEX);
     _window.on('closed', onClosed);
-    _window.openDevTools();
+    // _window.openDevTools();
     return _window;
 }
 

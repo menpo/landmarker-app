@@ -5,7 +5,12 @@
   "main": "main.js",
   "scripts": {
     "start": "npm run build:css && electron .",
-    "build:css": "node-sass app/scss/main.scss app/bundle.css --output-style expanded --include-path .",
+    "build:css": "node-sass app/scss/main.scss app/bundle.css --output-style compressed --include-path .",
+    "build:js": "browserify -t babelify app/client.js -o app/bundle.js --exclude fs --exclude url --exclude querystring --exclude ipc --exclude remote --exclude shell --exclude menu --exclude events",
+    "watch:js": "watchify -t babelify app/client.js -o app/bundle.js -v --debug --exclude fs --exclude url --exclude querystring --exclude ipc --exclude remote --exclude shell --exclude menu --exclude events",
+    "clean": "rm -rf dist",
+    "clean:osx": "rm -rf dist/osx",
+    "build:osx": "npm run clean:osx && electron-packager . \"Landmarker\" --out=dist/osx --platform=darwin --arch=x64 --version=0.29.2 --icon=icon.icns --overwrite --asar --ignore=\"app/scss\" --ignore=LICENSE --ignore=\"app/js\" --ignore=app/client.js --ignore=landmarker.io --ignore=node_modules --ignore=\".git*\" --ignore=\"icon.ic*\" --ignore=readme.md --ignore=.editorconfig --ignore=.esformatter --ignore=.eslintrc --ignore=dist --ignore=.DS_Store",
     "submodule": "git submodule update --init --remote",
     "postinstall": "npm run submodule"
   },
@@ -15,7 +20,6 @@
     "babel": "^5.8.19",
     "backbone": "^1.1.2",
     "drag-drop": "^2.2.4",
-    "electron-compile": "^0.6.3",
     "jquery": "^2.1.3",
     "js-yaml": "^3.3.1",
     "promise-polyfill": "^1.1.6",
@@ -24,11 +28,15 @@
     "underscore": "^1.6.0"
   },
   "devDependencies": {
+    "asar": "^0.7.2",
     "babel-eslint": "^3.1.23",
+    "babelify": "^6.1.3",
+    "browserify": "^11.0.1",
     "electron-debug": "^0.1.1",
     "electron-packager": "^5.0.1",
     "electron-prebuilt": "^0.29.2",
     "eslint": "^1.0.0-rc-1",
-    "node-sass": "^3.2.0"
+    "node-sass": "^3.2.0",
+    "watchify": "^3.3.1"
   }
 }
