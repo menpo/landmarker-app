@@ -10,7 +10,12 @@
     "watch:js": "watchify -t babelify app/client.js -o app/bundle.js -v --debug --exclude fs --exclude url --exclude querystring --exclude ipc --exclude remote --exclude shell --exclude menu --exclude events",
     "clean": "rm -rf dist",
     "clean:osx": "rm -rf dist/osx",
+    "clean:win": "rm -rf dist/win",
+    "clean:linux": "rm -rf dist/linux",
     "build:osx": "npm run clean:osx && electron-packager . \"Landmarker\" --out=dist/osx --platform=darwin --arch=x64 --version=0.29.2 --icon=icon.icns --overwrite --asar --ignore=\"app/scss\" --ignore=LICENSE --ignore=\"app/js\" --ignore=app/client.js --ignore=landmarker.io --ignore=node_modules --ignore=\".git*\" --ignore=\"icon.ic*\" --ignore=readme.md --ignore=.editorconfig --ignore=.esformatter --ignore=.eslintrc --ignore=dist --ignore=.DS_Store",
+    "build:win": "npm run clean:win && electron-packager . \"Landmarker\" --out=dist/win --platform=win32 --arch=all --version=0.29.2 --icon=icon.ico --overwrite --asar --ignore=\"app/scss\" --ignore=LICENSE --ignore=\"app/js\" --ignore=app/client.js --ignore=landmarker.io --ignore=node_modules --ignore=\".git*\" --ignore=\"icon.ic*\" --ignore=readme.md --ignore=.editorconfig --ignore=.esformatter --ignore=.eslintrc --ignore=dist --ignore=.DS_Store",
+    "build:linux": "npm run clean:linux && electron-packager . \"Landmarker\" --out=dist/linux --platform=linux --arch=all --version=0.29.2 --icon=icon.ico --overwrite --asar --ignore=\"app/scss\" --ignore=LICENSE --ignore=\"app/js\" --ignore=app/client.js --ignore=landmarker.io --ignore=node_modules --ignore=\".git*\" --ignore=\"icon.ic*\" --ignore=readme.md --ignore=.editorconfig --ignore=.esformatter --ignore=.eslintrc --ignore=dist --ignore=.DS_Store",
+    "build": "npm run build:osx && npm run build:win && npm run build:linux",
     "submodule": "git submodule update --init --remote",
     "postinstall": "npm run submodule"
   },
