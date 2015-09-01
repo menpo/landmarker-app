@@ -449,6 +449,7 @@ FSBackend.prototype.handleDragDrop = function (files) {
     files.forEach((file, i) => {
         ext = extname(file.name);
 
+        // Set the DROP_TYPE to the first we see, ignore anything else
         if (!dropType) {
             if (this.isValidAssetExtension(ext)) {
                 dropType = DROP_TYPE.ASSET;
@@ -458,6 +459,7 @@ FSBackend.prototype.handleDragDrop = function (files) {
         }
 
         if (dropType === DROP_TYPE.ASSET) {
+            // Ignore anything we already know about
             if (this._assets.indexOf(file.path) === -1) {
                 promises.push(Promise.resolve(this.setFileAsset(file.path)));
             } else {
@@ -475,6 +477,7 @@ FSBackend.prototype.handleDragDrop = function (files) {
         return null;
     }
 
+    // Resolve if any of the promises has resolved, after all have terminated
     _anyPromise(promises).then((result) => {
         loading.stop(async);
         if (dropType === DROP_TYPE.ASSET) {

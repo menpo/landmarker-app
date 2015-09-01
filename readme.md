@@ -19,4 +19,4 @@ We use [electron-packager](https://github.com/maxogden/electron-packager) for bu
 
 The `package.json` exposes the build scripts, but we haven't implemented any step to build installers, signing the files and auto updates (or at least updates notifications).
 
-The github release page currently (0.1.0) lists zip files which you can download and unpack manually. The mac version can be moved and run from anywhere, while the windows and linux version need to be run from the folder they come in.
+The github release page currently (0.1.0) lists zip files which you can download and unpack manually. The mac version can be moved and run from anywhere, while the windows and linux version need to be run from the folder they come in. These are the compressed folder as built by electron-packager.

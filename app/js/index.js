@@ -63,9 +63,15 @@ function init (server, mode) {
         }
     });
 
+    // Custom collection name
     $('#collectionName').text(app.get('activeCollection'));
+
     app.on('change:activeCollection', function () {
         $('#collectionName').text(app.get('activeCollection'));
+    });
+
+    $('#collectionName').click(() => {
+        if (typeof server.selectAssets === 'function') server.selectAssets();
     });
 
     makeMenu();
@@ -119,7 +125,10 @@ function changeAssets () {
         'Are you sure you want to change current assets collection ?', _changeAssets);
 }
 
-bus.on(EVENTS.RESTART, () => window.location.reload());
+bus.on(EVENTS.RESTART, () => {
+    cfg.clear();
+    window.location.reload()
+});
 
 bus.on(EVENTS.OPEN_FILES, _changeAssets);
 
