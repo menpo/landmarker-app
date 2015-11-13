@@ -8,10 +8,7 @@ import drop from 'drag-drop';
 
 import Config from '../../landmarker.io/src/js/app/model/config';
 import KSH from '../../landmarker.io/src/js/app/view/keyboard';
-import {
-    notify,
-    AssetLoadingNotification
-} from '../../landmarker.io/src/js/app/view/notification';
+import { notify } from '../../landmarker.io/src/js/app/view/notification';
 import Modal from '../../landmarker.io/src/js/app/view/modal';
 import App from '../../landmarker.io/src/js/app/model/app';
 import Server from '../../landmarker.io/src/js/app/backend/server';
@@ -36,7 +33,6 @@ function init (server, mode) {
     THREE.ImageUtils.crossOrigin = '';
     app = new App({server, mode});
 
-    new AssetLoadingNotification({model: app});
     new SidebarView({model: app});
     new AssetView.AssetPagerView({model: app});
     new AssetView.AssetNameView({model: app});
