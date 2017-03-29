@@ -10,7 +10,7 @@ import { ipcRenderer } from 'electron'
 
 import * as THREE from 'three'
 import * as $ from 'jquery'
-import drop from 'drag-drop'
+import * as drop from 'drag-drop'
 
 import Config from '../../landmarker.io/src/ts/app/model/config'
 import { KeyboardShortcutsHandler } from '../../landmarker.io/src/ts/app/view/keyboard'
@@ -19,7 +19,7 @@ import Modal from '../../landmarker.io/src/ts/app/view/modal'
 import { App, AppOptions } from '../../landmarker.io/src/ts/app/model/app'
 import * as Asset from '../../landmarker.io/src/ts/app/model/asset'
 import { Backend, Server } from '../../landmarker.io/src/ts/app/backend'
-import AssetView from '../../landmarker.io/src/ts/app/view/asset'
+import * as AssetView from '../../landmarker.io/src/ts/app/view/asset'
 
 import { ReactBridge } from '../../landmarker.io/src/ts/app/view/reactbridge'
 import { BackboneViewport } from '../../landmarker.io/src/ts/app/view/bbviewport'

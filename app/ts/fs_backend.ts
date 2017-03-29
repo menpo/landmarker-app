@@ -1,8 +1,8 @@
-import { remote, Path, ipcRenderer } from 'electron'
-const { fs } = remote
+import {  ipcRenderer } from 'electron'
+import * as fs from 'fs'
+import * as Path from 'path'
 
-import _ from 'underscore'
-import THREE from 'three'
+import * as THREE from 'three'
 
 import {
     basename, extname, stripExtension
@@ -91,8 +91,8 @@ export default class FSBackend implements Backend {
             'BACKEND_TYPE': FSBackend.Type
         }, true)
 
-        ipcRenderer.on('fs-backend-selected-template', this.addTemplates.bind(this))
-        ipcRenderer.on('fs-backend-selected-assets', this.setAssets.bind(this))
+        ipcRenderer.on('fs-backend-selected-template', ((event, arg) => {this.addTemplates.call(this, arg)}).bind(this))
+        ipcRenderer.on('fs-backend-selected-assets', ((event, arg) => {this.setAssets.call(this, arg)}).bind(this))
     }
 
     computeCollection() {
