@@ -1,11 +1,8 @@
 'use strict';
 
-var app = require('app');
-var BrowserWindow = require('browser-window');
-var dialog = require('dialog');
-var ipc = require('ipc');
+const { app, dialog, BrowserWindow, ipcMain } = require('electron');
 
-require('crash-reporter').start();
+require('electron').crashReporter.start({companyName: 'menpo', submitURL: '', uploadToServer: false});
 
 var APP_NAME = 'Landmarker';
 var INDEX = 'file://' + __dirname + '/app/index.html';
@@ -25,9 +22,9 @@ function createMainWindow () {
         }
     });
 
-    _window.loadUrl(INDEX);
+    _window.loadURL(INDEX);
     _window.on('closed', onClosed);
-    // _window.openDevTools();
+    _window.openDevTools();
     return _window;
 }
 
@@ -50,11 +47,11 @@ app.on('activate-with-no-open-windows', function () {
 app.on('ready', function () {
     mainWindow = createMainWindow();
 });
-ipc.on('close', function () {
+ipcMain.on('close', function () {
     app.quit()
 });
 
-ipc.on('fs-backend-select-assets', function () {
+ipcMain.on('fs-backend-select-assets', function () {
     dialog.showOpenDialog(mainWindow, {
         title: 'Select Assets Folder',
         properties: ['openFile', 'openDirectory', 'multiSelections']
@@ -67,7 +64,7 @@ ipc.on('fs-backend-select-assets', function () {
     });
 });
 
-ipc.on('fs-backend-select-template', function () {
+ipcMain.on('fs-backend-select-template', function () {
     dialog.showOpenDialog(mainWindow, {
         title: 'Select Template',
         properties: ['openFile', 'multiSelections'],
