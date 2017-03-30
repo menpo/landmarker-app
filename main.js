@@ -24,7 +24,7 @@ function createMainWindow () {
 
     _window.loadURL(INDEX);
     _window.on('closed', onClosed);
-    _window.openDevTools();
+    //_window.openDevTools();
     return _window;
 }
 
