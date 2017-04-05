@@ -72,8 +72,10 @@ function init (backend: Backend, mode: 'image' | 'mesh') {
         $('#collectionName').text(app.get('activeCollection'))
     })
 
-    $('#collectionName').click(() => {
-        if (typeof server.selectAssets === 'function') server.selectAssets()
+    $('#changeAssets').click(() => {
+        if (typeof server.selectAssets === 'function') {
+            changeAssets()
+        }
     })
 
     makeMenu()
@@ -102,7 +104,6 @@ function bindIntro () {
     bus.on(EVENTS.START_WITH_FS, function (mode) {
         server = new FSBackend(cfg)
         server.setMode(mode)
-        $('#changeAssets').click(changeAssets)
         server.selectAssets()
     })
 }

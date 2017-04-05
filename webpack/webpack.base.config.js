@@ -13,7 +13,7 @@ module.exports = {
     },
     resolve: {
         // Add `.ts` and `.tsx` as a resolvable extension.
-        extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js']
+        extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js', '.scss']
     },
     module: {
         loaders: [
@@ -31,11 +31,39 @@ module.exports = {
                 loaders: ["style", "css?sourceMap", "resolve-url", "sass?sourceMap", "postcss"]
             },
             {
-                test: /\.(eot|svg|ttf|woff|woff2)$/,
-                loader: 'file-loader?name=fonts/[name].[ext]&outputPath=fonts/out/'
+                test: /\.svg$/,
+                loader: 'url-loader',
+                options: {
+                    limit: 50000,
+                    mimetype: 'image/svg+xml'
+                }
             },
             {
-                test: /\.(png|jpg|svg)$/,
+                test: /\.woff$/,
+                loader: 'url-loader',
+                options: {
+                    limit: 50000,
+                    mimetype: 'application/font-woff'
+                }
+            },
+            {
+                test: /\.ttf$/,
+                loader: 'url-loader',
+                options: {
+                    limit: 50000,
+                    mimetype: 'application/octet-stream'
+                }
+            },
+            {
+                test: /\.eot$/,
+                loader: 'url-loader',
+                options: {
+                    limit: 50000,
+                    mimetype: 'application/vnd.ms-fontobject'
+                }
+            },
+            {
+                test: /\.(png|jpg)$/,
                 loader: 'url?limit=8192'  // inline base64 URLs for <=8k images, direct URLs for the rest
             }
         ]
