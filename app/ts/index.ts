@@ -38,7 +38,7 @@ function init (backend: Backend, mode: 'image' | 'mesh') {
 
     THREE.ImageUtils.crossOrigin = ''
     const appInit: AppOptions = { backend, mode }
-    var app = new App(appInit)
+    app = new App(appInit)
 
     new ReactBridge(app)
 
@@ -66,10 +66,10 @@ function init (backend: Backend, mode: 'image' | 'mesh') {
     })
 
     // Custom collection name
-    $('#collectionName').text(app.get('activeCollection'))
+    $('#collectionName').text(app.activeCollection)
 
     app.on('change:activeCollection', function () {
-        $('#collectionName').text(app.get('activeCollection'))
+        $('#collectionName').text(app.activeCollection)
     })
 
     $('#changeAssets').click(() => {
@@ -141,7 +141,7 @@ bus.on(EVENTS.OPEN_TEMPLATE, function () {
     if (!server && typeof server.pickTemplate !== 'function') return
 
     server.pickTemplate((name) => {
-        app.set('_activeTemplate', name)
+        app._activeTemplate = name
         app._initTemplates()
     }, function (err) {
         notify({
@@ -153,20 +153,28 @@ bus.on(EVENTS.OPEN_TEMPLATE, function () {
 // Leverage the setup we have in standard landmarker by clicking on existing
 // links
 bus.on(EVENTS.SAVE, function () {
-    if (app && app.landmarks()) $('#save').click()
+    if (app && app.landmarks) {
+        $('#save').trigger('click')
+    }
 })
 
 bus.on(EVENTS.EXPORT, function () {
-    if (app && app.landmarks()) $('#download').click()
+    if (app && app.landmarks) {
+        $('#download').click()
+    }
 })
 
 bus.on(EVENTS.SHOW_HELP, function () {
-    if (app) app.toggleHelpOverlay()
+    if (app) {
+        app.toggleHelpOverlay()
+    }
 })
 
 bus.on(EVENTS.FS_NEW_TEMPLATE, function (name) {
     if (app) {
-        if (name) app.set('_activeTemplate', name)
+        if (name) {
+            app._activeTemplate = name
+        }
         app._initTemplates()
     }
 })

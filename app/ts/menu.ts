@@ -34,7 +34,7 @@ const emptyMenu = [{
         label: 'Quit',
         accelerator: 'Command+Q',
         click: function() {
-            remote.require('app').quit()
+            remote.getCurrentWindow().close()
         }
     }]
 }, {
@@ -82,7 +82,7 @@ const mainMenu = [{
         label: 'Quit',
         accelerator: 'Command+Q',
         click: function() {
-            remote.require('app').quit()
+            remote.getCurrentWindow().close()
         }
     }]
 }, {
