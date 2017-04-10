@@ -1,17 +1,14 @@
-'use strict';
+import { remote, shell } from 'electron'
+const { Menu } = remote
 
-import remote from 'remote';
-import shell from 'shell';
-const Menu = remote.require('menu');
-
-import bus, * as EVENTS from './bus';
+import bus, * as EVENTS from './bus'
 
 const emptyMenu = [{
     label: 'Landmarker',
     submenu: [{
         label: 'About',
         click: function() {
-            shell.openExternal('https://github.com/menpo/landmarker-app');
+            shell.openExternal('https://github.com/menpo/landmarker-app')
         }
     }, {
         type: 'separator'
@@ -37,7 +34,7 @@ const emptyMenu = [{
         label: 'Quit',
         accelerator: 'Command+Q',
         click: function() {
-            remote.require('app').quit()
+            remote.getCurrentWindow().close()
         }
     }]
 }, {
@@ -45,17 +42,17 @@ const emptyMenu = [{
     submenu: [{
         label: 'User Guide',
         click: function() {
-            shell.openExternal('https://github.com/menpo/landmarker.io/wiki/User-guide');
+            shell.openExternal('https://github.com/menpo/landmarker.io/wiki/User-guide')
         }
     }]
-}];
+}]
 
 const mainMenu = [{
     label: 'Landmarker',
     submenu: [{
         label: 'About',
         click: function() {
-            shell.openExternal('https://github.com/menpo/landmarker-app');
+            shell.openExternal('https://github.com/menpo/landmarker-app')
         }
     }, {
         type: 'separator'
@@ -85,7 +82,7 @@ const mainMenu = [{
         label: 'Quit',
         accelerator: 'Command+Q',
         click: function() {
-            remote.require('app').quit()
+            remote.getCurrentWindow().close()
         }
     }]
 }, {
@@ -115,13 +112,13 @@ const mainMenu = [{
     }, {
         label: 'User Guide',
         click: function() {
-            shell.openExternal('https://github.com/menpo/landmarker.io/wiki/User-guide');
+            shell.openExternal('https://github.com/menpo/landmarker.io/wiki/User-guide')
         }
     }]
-}];
+}]
 
-Menu.setApplicationMenu(Menu.buildFromTemplate(emptyMenu));
+Menu.setApplicationMenu(Menu.buildFromTemplate(emptyMenu))
 
 export default function() {
-    Menu.setApplicationMenu(Menu.buildFromTemplate(mainMenu));
+    Menu.setApplicationMenu(Menu.buildFromTemplate(mainMenu))
 }

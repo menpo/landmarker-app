@@ -1,0 +1,24 @@
+{
+	"compilerOptions": {
+        "alwaysStrict": true,
+		"forceConsistentCasingInFileNames": true,
+		"jsx" : "react",
+		"module": "commonjs",
+        "noFallthroughCasesInSwitch": true,
+        // "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "sourceMap": true,
+        "strictNullChecks": true,
+		"target": "es5"
+	},
+	"exclude": [
+		"node_modules",
+		"build",
+		"tsDist",
+		"webpack",
+		"test"
+	]
+}

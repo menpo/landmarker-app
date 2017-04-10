@@ -4,164 +4,87 @@
 <head>
   <title>Landmarker</title>
   <meta http-equiv="expires" content="0" />
-  <link rel="stylesheet" href="bundle.css">
+  <script src="bundle.js"></script>
+  <meta charset="utf-8">
 </head>
 
 <body>
+  
+<!-- Viewport content -->
+<div id="viewportContainer"></div>
 
-  <!-- MAIN LANDMARKER.IO APP -->
-  <div class="Viewport" id="viewportContainer">
-      <!-- WebGL canvas (the actual assets and landmarks) -->
-      <div class="FullScreen" id="viewport"></div>
-
-      <!-- HTML5 canvas for 2D overlays, e.g. selection box, snap-mode hints -->
-      <canvas class="FullScreen" id="canvas"></canvas>
-      <!-- HTML5 canvas for Picture-in-Picture (PIP) view decoration -->
-      <canvas id="pipCanvas"></canvas>
-  </div>
-
-  <div class="Chrome">
-    <!-- HTML UI -->
+<!-- HTML UI -->
+<div class="Chrome">
     <div class="App-Flex-Vert">
-      <div class='TopBar' id='newVersionPrompt'></div>
-      <div class="App-Flex-Horiz">
-        <div class="App-Flex-LeftCol LeftSidebar">
-          <!-- Asset information  (top left) -->
-          <div class="AssetInfo">
-            <button class="ChangeAssets" id="changeAssets">
-              <span class="octicon octicon-file-submodule"></span>
-              -
-              <span id='collectionName'></span>
-            </button>
-            <button class="AssetName" id="assetName">
-              <span class="label">asset</span>
-              <span class="content">-</span>
-            </button>
-            <button class="AssetIndex" id="assetIndex">
-              <span class="label">index</span>
-              <span class="content">-/-</span>
-            </button>
-          </div>
-          <!-- Toolbox itself (bottom left) -->
-          <div class="Toolbar" id="toolbar">
-            <div class="Toolbar-Row" id="autosaveRow">
-              <div class="Toolbar-Row-Item">Autosave</div>
-              <div class="Toolbar-Row-Item">
-                <div class="onoffswitch">
-                  <input type="checkbox" name="autosaveToggle" class="onoffswitch-checkbox" id="autosaveToggle">
-                  <label class="onoffswitch-label" for="autosaveToggle">
-                    <div class="onoffswitch-inner"></div>
-                    <div class="onoffswitch-switch"></div>
-                  </label>
+        <div class='TopBar' id='newVersionPrompt'></div>
+        <div class="App-Flex-Horiz">
+            <div class="App-Flex-LeftCol LeftSidebar">
+                <!-- Asset information  (top left) -->
+                <div class="AssetInfo">
+                  <button class="ChangeAssets" id="changeAssets">
+                      <span class="octicon octicon-file-submodule"></span>
+                         -
+                      <span id='collectionName'></span>
+                  </button>
+                  <button class="AssetName" id="assetName">
+                      <span class="label">asset</span>
+                      <span class="content">-</span>
+                  </button>
+                  <button class="AssetIndex" id="assetIndex">
+                    <span class="label">index</span>
+                    <span class="content">-/-</span>
+                  </button>
                 </div>
-              </div>
+                <!-- Toolbox itself (bottom left) -->
+                <div class="Toolbar" id="toolbar"></div>
             </div>
-            <div class="Toolbar-Row" id="editingRow">
-              <div class="Toolbar-Row-Item">Snap</div>
-              <div class="Toolbar-Row-Item">
-                <div class="onoffswitch">
-                  <input type="checkbox" name="editingToggle" class="onoffswitch-checkbox" id="editingToggle">
-                  <label class="onoffswitch-label" for="editingToggle">
-                    <div class="onoffswitch-inner"></div>
-                    <div class="onoffswitch-switch"></div>
-                  </label>
+            <!-- PREV/NEXT  (bottom centre) -->
+            <div class="Pager" id="assetPager"></div>
+            <!-- SIDEBAR  -->
+            <div class="App-Flex-RightCol RightSidebar">
+                <div class="RightSidebar-Controls" id="lmActionsPanel">
+                    <div class="RightSidebar-Controls-Item">
+                        <button class="Button-Save" title="Save remotely"
+                                id="save">Save</button>
+                    </div>
+                    <div class="RightSidebar-Controls-Item">
+                        <button class="Button-Save" title="Download the landmarks locally"
+                                id="download">Download</button>
+                    </div>
+                    <div class="RightSidebar-Controls-Item">
+                        <button class="Button-Basic" id="help"><span class="octicon octicon-question"></span></button>
+                    </div>
                 </div>
-              </div>
-            </div>
-            <div class="Toolbar-Row" id="textureRow">
-              <div class="Toolbar-Row-Item">Texture</div>
-              <div class="Toolbar-Row-Item">
-                <div class="onoffswitch">
-                  <input type="checkbox" name="textureToggle" class="onoffswitch-checkbox" id="textureToggle">
-                  <label class="onoffswitch-label" for="textureToggle">
-                    <div class="onoffswitch-inner"></div>
-                    <div class="onoffswitch-switch"></div>
-                  </label>
+                <div class="RightSidebar-Controls" id="lmLoadPanel">
+                    <div class="RightSidebar-Controls-Item">
+                        <button class="Button-Info" title="Load data from previous asset" id="loadPrevious">Copy Previous</button>
+                    </div>
                 </div>
-              </div>
-            </div>
-            <div class="Toolbar-Row" id="connectivityRow">
-              <div class="Toolbar-Row-Item">Links</div>
-              <div class="Toolbar-Row-Item">
-                <div class="onoffswitch">
-                  <input type="checkbox" name="connectivityToggle" class="onoffswitch-checkbox" id="connectivityToggle">
-                  <label class="onoffswitch-label" for="connectivityToggle">
-                    <div class="onoffswitch-inner"></div>
-                    <div class="onoffswitch-switch"></div>
-                  </label>
+                <div class="RightSidebar-LandmarksPanel" id="landmarksPanel"></div>
+                <div class="RightSidebar-Header">
+                    <div class="RightSidebar-UndoRedo" id="undoRedo">
+                        <div class="Undo Disabled"><span class="octicon octicon-mail-reply"></span></div>
+                        <div class="Redo Disabled"><span class="octicon octicon-mail-reply"></span></div>
+                    </div>
+                    <div class="RightSidebar-Template" id="templatePanel">
+                        <div class="RightSidebar-TemplatePicker" id="templatePicker"></div>
+                        <div class='TemplateName'>-</div>
+                    </div>
                 </div>
-              </div>
             </div>
-            <div class="Toolbar-Row Toolbar-Slider" id="lmSizeRow">&#9679;
-              <input type="range" name="points" min="0" max="100" id="lmSizeSlider">
-            </div>
-          </div>
         </div>
-        <!-- PREV/NEXT  (bottom centre) -->
-        <div class="App-Flex-Pager Pager" id="assetPager">
-          <div class="Pager-Item">
-            <button class="Button-Basic" id="previous">&larr;</button>
-          </div>
-          <div class="Pager-Item">
-            <button class="Button-Basic" id="next">&rarr;</button>
-          </div>
-        </div>
-        <!-- SIDEBAR  -->
-        <div class="App-Flex-RightCol RightSidebar">
-          <div class="RightSidebar-Controls" id="lmActionsPanel">
-            <div class="RightSidebar-Controls-Item">
-              <button class="Button-Save" title="Save remotely" id="save">Save</button>
-            </div>
-            <div class="RightSidebar-Controls-Item">
-              <button class="Button-Save" title="Download the landmarks locally" id="download">Export</button>
-            </div>
-            <div class="RightSidebar-Controls-Item">
-              <button class="Button-Basic" id="help">
-                <span class="octicon octicon-question"></span>
-              </button>
-            </div>
-          </div>
-          <div class="RightSidebar-Controls" id="lmLoadPanel">
-            <div class="RightSidebar-Controls-Item">
-              <button class="Button-Info" title="Load data from previous asset" id="loadPrevious">Copy Previous</button>
-            </div>
-          </div>
-          <div class="RightSidebar-LandmarksPanel" id="landmarksPanel"></div>
-          <div class="RightSidebar-Header">
-            <div class="RightSidebar-UndoRedo" id="undoRedo">
-              <div class="Undo Disabled">
-                <span class="octicon octicon-mail-reply"></span>
-              </div>
-              <div class="Redo Disabled">
-                <span class="octicon octicon-mail-reply"></span>
-              </div>
-            </div>
-            <div class="RightSidebar-Template" id="templatePanel">
-              <div class="RightSidebar-TemplatePicker" id="templatePicker"></div>
-              <div class='TemplateName'>-</div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
+</div>
 
-  <div class="CornerSpinner" id="globalSpinner"></div>
+<div class="CornerSpinner" id="globalSpinner"></div>
 
-  <div class="FullScreen ModalCentreFlex NotificationWrapper" id="notificationOverlay">
+<div class="FullScreen ModalCentreFlex NotificationWrapper"
+     id="notificationOverlay">
     <div id="loadingSpinner"></div>
-  </div>
+</div>
 
-  <div class="FullScreen ModalCentreFlex ModalsWrapper" id="modalsWrapper"></div>
-
-  <div class="FullScreen ModalCentreFlex">
-    <div class="HelpOverlay" id="helpOverlay">
-      <table class="HelpContentTable">
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-  <script src="bundle.js"></script>
+<div class="FullScreen ModalCentreFlex ModalsWrapper" id="modalsWrapper"></div>
+<div class="FullScreen ModalCentreFlex" id="helpOverlay"></div>
 </body>
 
 </html>

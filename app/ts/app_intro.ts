@@ -1,14 +1,10 @@
-'use strict';
+import * as $ from 'jquery'
 
-import $ from 'jquery';
+import Modal from '../../landmarker.io/src/ts/app/view/modal'
 
-import Modal from '../../landmarker.io/src/js/app/view/modal';
-import Backend from '../../landmarker.io/src/js/app/backend';
-import { baseUrl } from '../../landmarker.io/src/js/app/lib/utils';
+import bus, {START_WITH_FS, START_WITH_SERVER} from './bus'
 
-import bus, {START_WITH_FS, START_WITH_SERVER} from './bus';
-
-import {version} from '../../package.json';
+import {version} from '../../package.json'
 
 const contents = `\
 <div class='Intro'>\
@@ -31,7 +27,7 @@ const contents = `\
         More info on Github\
     </a>\
 </div>\
-`;
+`
 
 const Intro = Modal.extend({
 
@@ -45,41 +41,41 @@ const Intro = Modal.extend({
     },
 
     init: function ({cfg}) {
-        this._cfg = cfg;
+        this._cfg = cfg
     },
 
     content: function () {
-        const $contents = $(contents);
-        return $contents;
+        const $contents = $(contents)
+        return $contents
     },
 
     startServer: function () {
         Modal.prompt('Where is your server located ?', (value) => {
-            bus.emit(START_WITH_SERVER, value);
-            this.close();
-        }, () => {});
+            bus.emit(START_WITH_SERVER, value)
+            this.close()
+        }, () => {})
     },
 
     startFS3d: function () {
-        bus.emit(START_WITH_FS, 'mesh');
-        this.close();
+        bus.emit(START_WITH_FS, 'mesh')
+        this.close()
     },
 
     startFS2d: function () {
-        bus.emit(START_WITH_FS, 'image');
-        this.close();
+        bus.emit(START_WITH_FS, 'image')
+        this.close()
     }
-});
+})
 
-let instance;
+let instance
 export default {
-    init: function (opts) { instance = new Intro(opts); },
+    init: function (opts) { instance = new Intro(opts) },
 
     open: function () {
-        instance._cfg.clear();
-        instance.open();
+        instance._cfg.clear()
+        instance.open()
     },
 
-    close: function () { instance.close(); },
-    initialized: function () { return !!instance; }
-};
+    close: function () { instance.close() },
+    initialized: function () { return !!instance }
+}
