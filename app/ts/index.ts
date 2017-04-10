@@ -190,19 +190,8 @@ bus.on(EVENTS.FS_READY, function () {
 })
 
 document.addEventListener('DOMContentLoaded', function () {
-
     cfg = Config()
     cfg.load()
     Intro.init({cfg})
-
-    if (cfg.get('BACKEND_TYPE') === FSBackend.Type) {
-        server = new FSBackend(cfg)
-        server.setMode(cfg.get('FS_MODE'))
-        if (cfg.get('FS_ASSETS')) {
-            return server.setAssets(cfg.get('FS_ASSETS')).then(function () {
-                notify({type: 'success', msg: 'Restarted from cached data'})
-            }, bindIntro)
-        }
-    }
     bindIntro()
 })

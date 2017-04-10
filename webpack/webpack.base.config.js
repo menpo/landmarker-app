@@ -6,10 +6,10 @@ const PATHS = {
 };
 
 module.exports = {
-    entry: "./app/ts/index.ts",
+    entry: './app/ts/index.ts',
     output: {
         path: PATHS.build,
-        filename: "bundle.js"
+        filename: 'bundle.js'
     },
     resolve: {
         // Add `.ts` and `.tsx` as a resolvable extension.
@@ -24,11 +24,11 @@ module.exports = {
             },
             {
                 test: /\.json$/,
-                loader: "json"
+                loader: 'json'
             },
             {
                 test: /\.scss$/,
-                loaders: ["style", "css?sourceMap", "resolve-url", "sass?sourceMap", "postcss"]
+                loaders: ['style', 'css?sourceMap', 'resolve-url', 'sass?sourceMap', 'postcss']
             },
             {
                 test: /\.svg$/,
