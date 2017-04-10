@@ -138,7 +138,9 @@ bus.on(EVENTS.OPEN_FILES, _changeAssets)
 
 bus.on(EVENTS.OPEN_TEMPLATE, function () {
 
-    if (!server && typeof server.pickTemplate !== 'function') return
+    if (!server && typeof server.pickTemplate !== 'function') {
+        return
+    }
 
     server.pickTemplate((name) => {
         app._activeTemplate = name
@@ -154,7 +156,7 @@ bus.on(EVENTS.OPEN_TEMPLATE, function () {
 // links
 bus.on(EVENTS.SAVE, function () {
     if (app && app.landmarks) {
-        $('#save').trigger('click')
+        $('#save').click()
     }
 })
 
