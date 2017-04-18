@@ -3,22 +3,40 @@
   "version": "0.1.1",
   "description": "",
   "main": "main.js",
+  "build": {
+    "appId": "landmarker.app",
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        "zip",
+        "dmg"
+      ]
+    },
+    "linux": {
+      "category": "Utility",
+      "target": [
+        "deb"
+      ]
+    },
+    "nsis": {
+      "perMachine": true
+    }
+  },
   "scripts": {
-    "start": "npm run build && electron .",
-    "electron": "electron .",
-    "build:clean": "rm -rf ./build",
+    "start": "npm run build && electron . --ignore-gpu-blacklist",
+    "electron": "electron . --ignore-gpu-blacklist",
     "build:webpack": "webpack --config ./webpack/webpack.prod.config.js",
-    "build:prod": "NODE_ENV=production npm run build:clean && npm run build:webpack:prod",
-    "build": "npm run build:clean && npm run build:webpack",
+    "build": "NODE_ENV=production && npm run build:webpack",
     "watch:webpack": "webpack --config ./webpack/webpack.dev.config.js --progress --colors --watch",
-    "watch": "npm run build:clean && npm run watch:webpack",
+    "watch": "npm run watch:webpack",
     "dist:clean": "rm -rf dist",
-    "dist:clean-osx": "rm -rf dist/osx",
-    "dist:clean-win": "rm -rf dist/win",
-    "dist:clean-linux": "rm -rf dist/linux",
-    "dist:osx": "npm run clean:osx && electron-packager . \"Landmarker\" --out=dist/osx --platform=darwin --arch=x64 --version=0.29.2 --icon=icon.icns --overwrite --asar --ignore=\"app/scss\" --ignore=LICENSE --ignore=\"app/js\" --ignore=app/client.js --ignore=landmarker.io --ignore=node_modules --ignore=\".git*\" --ignore=\"icon.ic*\" --ignore=readme.md --ignore=.editorconfig --ignore=.esformatter --ignore=.eslintrc --ignore=dist --ignore=.DS_Store",
-    "dist:win": "npm run clean:win && electron-packager . \"Landmarker\" --out=dist/win --platform=win32 --arch=all --version=0.29.2 --icon=icon.ico --overwrite --asar --ignore=\"app/scss\" --ignore=LICENSE --ignore=\"app/js\" --ignore=app/client.js --ignore=landmarker.io --ignore=node_modules --ignore=\".git*\" --ignore=\"icon.ic*\" --ignore=readme.md --ignore=.editorconfig --ignore=.esformatter --ignore=.eslintrc --ignore=dist --ignore=.DS_Store",
-    "dist:linux": "npm run clean:linux && electron-packager . \"Landmarker\" --out=dist/linux --platform=linux --arch=all --version=0.29.2 --icon=icon.ico --overwrite --asar --ignore=\"app/scss\" --ignore=LICENSE --ignore=\"app/js\" --ignore=app/client.js --ignore=landmarker.io --ignore=node_modules --ignore=\".git*\" --ignore=\"icon.ic*\" --ignore=readme.md --ignore=.editorconfig --ignore=.esformatter --ignore=.eslintrc --ignore=dist --ignore=.DS_Store",
+    "dist:clean-osx": "rm -rf dist/mac* && rm -f dist/*.zip && rm -f dist/*.dmg",
+    "dist:clean-win": "rm -rf dist/win* && rm -f dist/*.exe",
+    "dist:clean-linux": "rm -rf dist/linux* && && rm -f dist/*.deb",
+    "dist:osx": "npm run build && npm run dist:clean-osx && build -m",
+    "dist:win": "npm run build && npm run dist:clean-win && build -w",
+    "dist:linux": "npm run build && npm run dist:clean-linux && build -l",
+    "dist": "npm run build && npm run dist:clean && build -mwl",
     "submodule": "git submodule update --init --remote",
     "postinstall": "npm run submodule"
   },
@@ -39,6 +57,7 @@
     "backbone": "^1.1.2",
     "css-loader": "^0.26.1",
     "drag-drop": "^2.13.2",
+    "electron-updater": "^1.12.0",
     "es6-promise": "^4.0.5",
     "file-loader": "^0.11.0",
     "jquery": "^3.1.1",
@@ -67,8 +86,8 @@
     "babelify": "^6.1.3",
     "browserify": "^11.0.1",
     "electron": "^1.6.2",
-    "electron-debug": "^0.1.1",
-    "electron-packager": "^8.6.0",
+    "electron-builder": "^16.8.3",
+    "electron-debug": "^1.1.0",
     "eslint": "^1.0.0-rc-1",
     "node-sass": "^3.2.0",
     "watchify": "^3.3.1"
