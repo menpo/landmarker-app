@@ -32,7 +32,7 @@
     "dist:clean": "rm -rf dist",
     "dist:clean-osx": "rm -rf dist/mac* && rm -f dist/*.zip && rm -f dist/*.dmg",
     "dist:clean-win": "rm -rf dist/win* && rm -f dist/*.exe",
-    "dist:clean-linux": "rm -rf dist/linux* && && rm -f dist/*.deb",
+    "dist:clean-linux": "rm -rf dist/linux* && rm -f dist/*.deb",
     "dist:osx": "npm run build && npm run dist:clean-osx && build -m",
     "dist:win": "npm run build && npm run dist:clean-win && build -w",
     "dist:linux": "npm run build && npm run dist:clean-linux && build -l",
