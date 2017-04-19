@@ -13,7 +13,7 @@ matrix:
       compiler: clang
 
 node_js:
-  - 6
+  - 7
 
 cache:
   directories:
@@ -46,10 +46,12 @@ before_install:
     echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list;
     sudo apt-get update;
     sudo apt-get install --no-install-recommends -y mono-devel ca-certificates-mono;
+    sudo apt-get install -f;
+    sudo dpkg -a --configure;
     fi
 
 install:
-- nvm install 6
+- nvm install 7
 - yarn install
 
 script:
