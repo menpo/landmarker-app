@@ -38,7 +38,7 @@
     "dist:linux": "npm run build && npm run dist:clean-linux && build -l",
     "dist": "npm run build && npm run dist:clean && build -mwl",
     "submodule": "git submodule update --init --remote",
-    "postinstall": "npm run submodule"
+    "postinstall": "npm run submodule && install-app-deps"
   },
   "author": "lirsacc <c.lirsac@gmail.com>",
   "license": "BSD",
