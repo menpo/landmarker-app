@@ -12,6 +12,9 @@ matrix:
       env: CC=clang CXX=clang++ npm_config_clang=1
       compiler: clang
 
+node_js:
+  - 6
+
 cache:
   directories:
   - node_modules
@@ -36,6 +39,7 @@ before_install:
   - export PATH="$HOME/.yarn/bin:$PATH"
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
     sudo add-apt-repository ppa:ubuntu-wine/ppa -y;
+    sudo dpkg --add-architecture i386;
     sudo apt-get update;
     sudo apt-get install --no-install-recommends -y wine1.8;
     sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF;
@@ -45,7 +49,7 @@ before_install:
     fi
 
 install:
-- nvm install 7
+- nvm install 6
 - yarn install
 
 script:
