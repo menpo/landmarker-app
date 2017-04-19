@@ -9,8 +9,6 @@ matrix:
   include:
     - os: osx
     - os: linux
-      env: CC=clang CXX=clang++ npm_config_clang=1
-      compiler: clang
 
 cache:
   directories:
@@ -32,10 +30,6 @@ before_install:
   - curl -o- -L https://yarnpkg.com/install.sh | bash
   - export PATH="$HOME/.yarn/bin:$PATH"
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-    sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y;
-    sudo apt-get update;
-    sudo apt-get install -y gcc-4.9;
-    sudo apt-get upgrade libstdc++6 -y;
     sudo add-apt-repository ppa:ubuntu-wine/ppa -y;
     sudo dpkg --add-architecture i386;
     sudo apt-get update;
