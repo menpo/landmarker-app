@@ -19,7 +19,11 @@ cache:
 
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
+      - gcc-4.8
+      - g++-4.8
       - libgnome-keyring-dev
       - libsecret-1-dev
       - icnsutils
@@ -31,9 +35,7 @@ before_install:
   - curl -o- -L https://yarnpkg.com/install.sh | bash
   - export PATH="$HOME/.yarn/bin:$PATH"
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-    sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test;
-    sudo apt-get install -qq g++-4.8;
-    export CXX="g++-4.8";
+    export CXX="g++-4.8" CC="gcc-4.8";
     sudo add-apt-repository ppa:ubuntu-wine/ppa -y;
     sudo dpkg --add-architecture i386;
     sudo apt-get update;
