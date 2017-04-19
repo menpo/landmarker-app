@@ -18,7 +18,10 @@ cache:
 
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
+      - libstdc++-4.9-dev
       - libgnome-keyring-dev
       - libsecret-1-dev
       - icnsutils
