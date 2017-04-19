@@ -9,7 +9,8 @@ matrix:
   include:
     - os: osx
     - os: linux
-      compiler: gcc
+      env: CC=clang CXX=clang++ npm_config_clang=1
+      compiler: clang
 
 cache:
   directories:
@@ -19,7 +20,10 @@ cache:
 
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
+      - g++-4.8
       - libgnome-keyring-dev
       - libsecret-1-dev
       - icnsutils
@@ -46,6 +50,7 @@ before_install:
 
 install:
 - nvm install 7
+- yarn install electron-builder@next
 - yarn install
 
 script:
