@@ -26,7 +26,7 @@
     "start": "npm run build && electron .",
     "electron": "electron .",
     "build:webpack": "webpack --config ./webpack/webpack.prod.config.js",
-    "build": "NODE_ENV=production && npm run build:webpack",
+    "build": "npm run build:webpack",
     "watch:webpack": "webpack --config ./webpack/webpack.dev.config.js --progress --colors --watch",
     "watch": "npm run watch:webpack",
     "dist:clean": "rm -rf dist",
