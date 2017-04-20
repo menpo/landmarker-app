@@ -1,4 +1,4 @@
 [submodule "landmarker.io"]
 	path = landmarker.io
-	url = git@github.com:menpo/landmarker.io.git
+	url = https://github.com/menpo/landmarker.io.git
 	branch = ts_react
