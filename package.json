@@ -30,10 +30,8 @@
   "scripts": {
     "start": "npm run build && electron .",
     "electron": "electron .",
-    "build:webpack": "webpack --config ./webpack/webpack.prod.config.js",
-    "build": "npm run build:webpack",
-    "watch:webpack": "webpack --config ./webpack/webpack.dev.config.js --progress --colors --watch",
-    "watch": "npm run watch:webpack",
+    "build": "webpack --config ./webpack/webpack.prod.config.js",
+    "watch": "webpack --config ./webpack/webpack.dev.config.js --progress --colors --watch",
     "dist:clean": "rm -rf dist",
     "dist:clean-osx": "rm -rf dist/mac* && rm -f dist/*.zip && rm -f dist/*.dmg",
     "dist:clean-win": "rm -rf dist/win* && rm -f dist/*.exe",
