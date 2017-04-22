@@ -86,17 +86,17 @@ ipcMain.on('fs-backend-select-template', function () {
     });
 });
 
-ipcMain.on('check-for-updates', function () {
+ipcMain.on('check-for-updates', function (event, notifyNoUpdates) {
     if (process.platform === 'linux' || autoUpdater === undefined
     || autoUpdater.checkForUpdates === undefined) {
-        checkLatestVersion();
+        checkLatestVersion(notifyNoUpdates);
     } else {
         mainWindow.send('menu-disable-check-for-updates');
-        autoUpdater.checkForUpdates().then(handleUpdateCheck);
+        autoUpdater.checkForUpdates().then(handleUpdateCheck.bind(null, notifyNoUpdates));
     }
 });
 
-function checkLatestVersion() {
+function checkLatestVersion(notifyNoUpdates) {
     CLIENT.get('releases/latest', function(err, res, body) {
         if (err || body === undefined || body.tag_name === undefined) {
             dialog.showErrorBox('Error', 'Error encountered when checking for updates:\n\n' + (err || 'Empty response.'));
@@ -104,14 +104,14 @@ function checkLatestVersion() {
         }
         var version = body.tag_name;
         version = version.replace(/[a-zA-Z]/g, '');
-        if (version === appVersion) {
+        if (version === appVersion && notifyNoUpdates) {
             const options = {
                 type: 'info',
                 title: 'No updates available',
                 message: 'There are no updates available. This is the latest version of Landmarker.'
             };
             dialog.showMessageBox(mainWindow, options);
-        } else {
+        } else if (version !== appVersion) {
             const options = {
                 type: 'question',
                 title: 'Update available',
@@ -126,7 +126,7 @@ function checkLatestVersion() {
     });
 }
 
-function handleUpdateCheck(updateCheckResult) {
+function handleUpdateCheck(notifyNoUpdates, updateCheckResult) {
     if (updateCheckResult.downloadPromise !== undefined) {
         const options = {
             type: 'question',
@@ -142,12 +142,14 @@ function handleUpdateCheck(updateCheckResult) {
             mainWindow.send('menu-reset-check-for-updates');
         }
     } else {
-        const options = {
-            type: 'info',
-            title: 'No updates available',
-            message: 'There are no updates available. This is the latest version of Landmarker.'
-        };
-        dialog.showMessageBox(mainWindow, options);
+        if (notifyNoUpdates) {
+            const options = {
+                type: 'info',
+                title: 'No updates available',
+                message: 'There are no updates available. This is the latest version of Landmarker.'
+            };
+            dialog.showMessageBox(mainWindow, options);
+        }
         mainWindow.send('menu-reset-check-for-updates');
     }
 };

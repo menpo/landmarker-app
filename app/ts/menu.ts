@@ -115,9 +115,11 @@ const mainMenuTemplate = [{
             shell.openExternal('https://github.com/menpo/landmarker.io/wiki/User-guide')
         }
     }, {
+        // Warning! If the position of the 'Help' menu item or the position of this submenu changes,
+        // then the code below that references this item needs to be altered.
         label: 'Check for updates',
         click: function() {
-            ipcRenderer.send('check-for-updates')
+            ipcRenderer.send('check-for-updates', true)
         }
     }]
 }]
