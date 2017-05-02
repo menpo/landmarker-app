@@ -1,9 +1,9 @@
-import { remote, shell } from 'electron'
+import { remote, shell, ipcRenderer } from 'electron'
 const { Menu } = remote
 
 import bus, * as EVENTS from './bus'
 
-const emptyMenu = [{
+const emptyMenuTemplate = [{
     label: 'Landmarker',
     submenu: [{
         label: 'About',
@@ -22,11 +22,11 @@ const emptyMenu = [{
         accelerator: 'Command+H',
         selector: 'hide:'
     }, {
-        label: 'Hide Others',
+        label: 'Hide others',
         accelerator: 'Command+Shift+H',
         selector: 'hideOtherApplications:'
     }, {
-        label: 'Show All',
+        label: 'Show all',
         selector: 'unhideAllApplications:'
     }, {
         type: 'separator'
@@ -47,7 +47,7 @@ const emptyMenu = [{
     }]
 }]
 
-const mainMenu = [{
+const mainMenuTemplate = [{
     label: 'Landmarker',
     submenu: [{
         label: 'About',
@@ -66,11 +66,11 @@ const mainMenu = [{
         accelerator: 'Command+H',
         selector: 'hide:'
     }, {
-        label: 'Hide Others',
+        label: 'Hide others',
         accelerator: 'Command+Shift+H',
         selector: 'hideOtherApplications:'
     }, {
-        label: 'Show All',
+        label: 'Show all',
         selector: 'unhideAllApplications:'
     }, {
         type: 'separator'
@@ -100,7 +100,7 @@ const mainMenu = [{
         accelerator: 'Super+Shift+S',
         click: () => bus.emit(EVENTS.EXPORT)
     }, {
-        label: 'Open Template',
+        label: 'Open template',
         accelerator: 'Super+T',
         click: () => bus.emit(EVENTS.OPEN_TEMPLATE)
     }]
@@ -114,11 +114,38 @@ const mainMenu = [{
         click: function() {
             shell.openExternal('https://github.com/menpo/landmarker.io/wiki/User-guide')
         }
+    }, {
+        // Warning! If the position of the 'Help' menu item or the position of this submenu changes,
+        // then the code below that references this item needs to be altered.
+        label: 'Check for updates',
+        click: function() {
+            ipcRenderer.send('check-for-updates', true)
+        }
     }]
 }]
 
-Menu.setApplicationMenu(Menu.buildFromTemplate(emptyMenu))
+const emptyMenu = Menu.buildFromTemplate(emptyMenuTemplate)
+const mainMenu = Menu.buildFromTemplate(mainMenuTemplate)
+
+// Warning! This code is dependent on the exact position of this menu item!
+const checkForUpdatesMenuItem = mainMenu.items[2].submenu.items[2]
+
+Menu.setApplicationMenu(emptyMenu)
+
+ipcRenderer.on('menu-reset-check-for-updates', function() {
+    checkForUpdatesMenuItem.enabled = true
+    checkForUpdatesMenuItem.label = 'Check for updates'
+})
+
+ipcRenderer.on('menu-disable-check-for-updates', function() {
+    checkForUpdatesMenuItem.enabled = false
+    checkForUpdatesMenuItem.label = 'Checking for updates...'
+})
+
+ipcRenderer.on('menu-rename-check-for-updates', function(label) {
+    checkForUpdatesMenuItem.label = label
+})
 
 export default function() {
-    Menu.setApplicationMenu(Menu.buildFromTemplate(mainMenu))
+    Menu.setApplicationMenu(mainMenu)
 }

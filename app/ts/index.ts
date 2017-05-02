@@ -83,6 +83,8 @@ function init (backend: Backend, mode: 'image' | 'mesh') {
     bindDragAndDrop()
     const keyboard = new KeyboardShortcutsHandler(app, viewport)
     keyboard.enable()
+
+    ipcRenderer.send('check-for-updates', false)
 }
 
 // Show the backend selection screen and bind related events
