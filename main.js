@@ -8,16 +8,17 @@ const appVersion = require('./package.json').version;
 require('electron').crashReporter.start({companyName: 'menpo', submitURL: '', uploadToServer: false});
 
 var APP_NAME = 'Landmarker';
+var PREFERENCES_NAME = 'Preferences';
 var INDEX = 'file://' + __dirname + '/app/index.html';
+var PREFERENCES = 'file://' + __dirname + '/app/preferences.html';
 var CLIENT = request.createClient('https://api.github.com/repos/menpo/landmarker-app/');
 CLIENT.headers['Accept'] = 'application/vnd.github.v3+json';
 
 autoUpdater.autoDownload = false;
 
-var mainWindow;
+var mainWindow, preferencesWindow;
 
 function createMainWindow () {
-
     var _window = new BrowserWindow({
         title: APP_NAME,
         width: 1200,
@@ -30,13 +31,28 @@ function createMainWindow () {
     });
 
     _window.loadURL(INDEX);
-    _window.on('closed', onClosed);
+    _window.on('closed', function() {
+        mainWindow = null;
+    });
     //_window.openDevTools();
     return _window;
 }
 
-function onClosed () {
-    mainWindow = null;
+function createPreferencesWindow () {
+    var _window = new BrowserWindow({
+        title: PREFERENCES_NAME,
+        width: 445,
+        height: 80,
+        resizable: false,
+        parent: mainWindow
+    });
+
+    _window.loadURL(PREFERENCES);
+    _window.on('closed', function() {
+        preferencesWindow = null;
+    });
+    //_window.openDevTools();
+    return _window;
 }
 
 app.on('window-all-closed', function () {
@@ -84,6 +100,10 @@ ipcMain.on('fs-backend-select-template', function () {
             mainWindow.send('fs-backend-selected-template', filenames);
         }
     });
+});
+
+ipcMain.on('open-preferences', function() {
+    preferencesWindow = createPreferencesWindow();
 });
 
 ipcMain.on('check-for-updates', function (event, notifyNoUpdates) {

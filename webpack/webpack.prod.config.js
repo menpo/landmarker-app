@@ -2,9 +2,11 @@ var webpack = require("webpack");
 var AppCachePlugin = require('appcache-webpack-plugin');
 var webpackConfig = require("./webpack.base.config.js");
 
-webpackConfig.devtool = "source-map";  // full separate source maps
-webpackConfig.bail = true;  // at any error just fallover
-webpackConfig.plugins = webpackConfig.plugins.concat(
+var mainConfig = webpackConfig[0];
+
+mainConfig.devtool = "source-map";  // full separate source maps
+mainConfig.bail = true;  // at any error just fallover
+mainConfig.plugins = mainConfig.plugins.concat(
     new webpack.DefinePlugin({
         "process.env": {
             // This has effect on the react lib size

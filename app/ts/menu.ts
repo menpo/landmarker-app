@@ -13,8 +13,8 @@ const emptyMenuTemplate = [{
     }, {
         type: 'separator'
     }, {
-        label: 'Services',
-        submenu: []
+        label: 'Preferences',
+        click: () => ipcRenderer.send('open-preferences')
     }, {
         type: 'separator'
     }, {
@@ -33,17 +33,13 @@ const emptyMenuTemplate = [{
     }, {
         label: 'Quit',
         accelerator: 'Command+Q',
-        click: function() {
-            remote.getCurrentWindow().close()
-        }
+        click: () => remote.getCurrentWindow().close()
     }]
 }, {
     label: 'Help',
     submenu: [{
         label: 'User Guide',
-        click: function() {
-            shell.openExternal('https://github.com/menpo/landmarker.io/wiki/User-guide')
-        }
+        click: () => shell.openExternal('https://github.com/menpo/landmarker.io/wiki/User-guide')
     }]
 }]
 
@@ -51,14 +47,12 @@ const mainMenuTemplate = [{
     label: 'Landmarker',
     submenu: [{
         label: 'About',
-        click: function() {
-            shell.openExternal('https://github.com/menpo/landmarker-app')
-        }
+        click: () => shell.openExternal('https://github.com/menpo/landmarker-app')
     }, {
         type: 'separator'
     }, {
-        label: 'Services',
-        submenu: []
+        label: 'Preferences',
+        click: () => ipcRenderer.send('open-preferences')
     }, {
         type: 'separator'
     }, {
@@ -81,9 +75,7 @@ const mainMenuTemplate = [{
     }, {
         label: 'Quit',
         accelerator: 'Command+Q',
-        click: function() {
-            remote.getCurrentWindow().close()
-        }
+        click: () => remote.getCurrentWindow().close()
     }]
 }, {
     label: 'File',
@@ -111,16 +103,12 @@ const mainMenuTemplate = [{
         click: () => bus.emit(EVENTS.SHOW_HELP)
     }, {
         label: 'User Guide',
-        click: function() {
-            shell.openExternal('https://github.com/menpo/landmarker.io/wiki/User-guide')
-        }
+        click: () => shell.openExternal('https://github.com/menpo/landmarker.io/wiki/User-guide')
     }, {
         // Warning! If the position of the 'Help' menu item or the position of this submenu changes,
         // then the code below that references this item needs to be altered.
         label: 'Check for updates',
-        click: function() {
-            ipcRenderer.send('check-for-updates', true)
-        }
+        click: () => ipcRenderer.send('check-for-updates', true)
     }]
 }]
 
