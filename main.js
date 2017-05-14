@@ -267,7 +267,7 @@ ipcMain.on('restore-default-prefs', () => {
 ipcMain.on('select-template-dir', () => {
     dialog.showOpenDialog(preferencesWindow, {
         title: 'Select User Template Directory',
-        properties: ['openDirectory', 'createDirectory', 'showHiddenFiles']
+        properties: ['openDirectory', 'createDirectory']
     }, function (filepaths) {
         if (filepaths) {
             preferencesWindow.send('template-dir-selected', filepaths);

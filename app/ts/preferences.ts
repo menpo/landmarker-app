@@ -16,6 +16,7 @@ function init() {
     restoreDefaultsButton = <HTMLButtonElement>document.getElementById('restore-default')
     templateDirBrowseButton = <HTMLButtonElement>document.getElementById('template-dir-browse')
 
+    // Set up ipc listeners
     ipcRenderer.on('template-dir-found', (event, templDir: string) => {
         setPreferences({templateDir: templDir})
         restoreDefaultsButton.disabled = false
@@ -31,6 +32,7 @@ function init() {
         // Check if apply button should be enabled
         prefsApplyButton.disabled = templateDirField.value === templateDir
     })
+    // Set up button listeners
     prefsApplyButton.onclick = () => {
         ipcRenderer.send('update-preferences', {
             templateDir: templateDirField.value
@@ -42,6 +44,7 @@ function init() {
     templateDirBrowseButton.onclick = () => {
         ipcRenderer.send('select-template-dir')
     }
+    // Send request for initial preferences
     ipcRenderer.send('find-template-dir')
 }
 
