@@ -3,17 +3,29 @@
 const { app, dialog, BrowserWindow, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const request = require('request-json');
+const path = require('path');
+const fs = require('fs');
 const appVersion = require('./package.json').version;
 
 require('electron').crashReporter.start({companyName: 'menpo', submitURL: '', uploadToServer: false});
 
-var APP_NAME = 'Landmarker';
-var PREFERENCES_NAME = 'Preferences';
-var INDEX = 'file://' + __dirname + '/app/index.html';
-var PREFERENCES = 'file://' + __dirname + '/app/preferences.html';
-var CLIENT = request.createClient('https://api.github.com/repos/menpo/landmarker-app/');
+const APP_NAME = 'Landmarker';
+const PREFERENCES_NAME = 'Preferences';
+const INDEX = 'file://' + __dirname + '/app/index.html';
+const PREFERENCES = 'file://' + __dirname + '/app/preferences.html';
+const CLIENT = request.createClient('https://api.github.com/repos/menpo/landmarker-app/');
 CLIENT.headers['Accept'] = 'application/vnd.github.v3+json';
 
+const USER_DATA_DIR = app.getPath('userData');
+const DEFAULT_TEMPLATE_DIR = path.join(USER_DATA_DIR, 'usertemplates');
+const PREFERENCES_FILE = path.join(USER_DATA_DIR, 'preferences.json')
+const DEFAULT_PREFERENCES = {
+    templateDir: DEFAULT_TEMPLATE_DIR
+}
+
+var cachedPreferences;
+
+// Stop autoUpdate from downloading the update without the user's permission
 autoUpdater.autoDownload = false;
 
 var mainWindow, preferencesWindow;
@@ -55,6 +67,40 @@ function createPreferencesWindow () {
     return _window;
 }
 
+function createDirIfNotPresent (dirPath) {
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath);
+    } else if (!fs.lstatSync(dirPath).isDirectory()) {
+        fs.unlinkSync(dirPath);
+        fs.mkdirSync(dirPath);
+    }
+}
+
+function createPreferencesFileIfNotPresent () {
+    if (!fs.existsSync(PREFERENCES_FILE)) {
+        // Preferences file does not exist
+        fs.writeFileSync(PREFERENCES_FILE, JSON.stringify(DEFAULT_PREFERENCES));
+        cachedPreferences = DEFAULT_PREFERENCES;
+    } else {
+        var preferences;
+        try {
+            // Check that syntax is valid
+            preferences = JSON.parse(fs.readFileSync(PREFERENCES_FILE, 'utf8'));
+            // Check that structure is valid
+            if (preferences.templateDir === undefined) {
+                // Add default template directory to preferences
+                preferences.templateDir = DEFAULT_TEMPLATE_DIR;
+                fs.writeFileSync(PREFERENCES_FILE, JSON.stringify(preferences));
+            }
+            cachedPreferences = preferences;
+        } catch(e) {
+            // Syntax invalid - replace with defaults
+            fs.writeFileSync(PREFERENCES_FILE, JSON.stringify(DEFAULT_PREFERENCES));
+            cachedPreferences = DEFAULT_PREFERENCES;
+        }
+    }
+}
+
 app.on('window-all-closed', function () {
     if (process.platform !== 'darwin') {
         app.quit();
@@ -68,6 +114,14 @@ app.on('activate-with-no-open-windows', function () {
 });
 
 app.on('ready', function () {
+    // Use synchronous operations in initialisation
+    createDirIfNotPresent(USER_DATA_DIR);
+    // Create prefs file if not present and restore it to defaults if it is invalid
+    createPreferencesFileIfNotPresent();
+    createDirIfNotPresent(DEFAULT_TEMPLATE_DIR);
+    // Check that current template directory exists
+    const preferences = JSON.parse(fs.readFileSync(PREFERENCES_FILE, 'utf8'));
+    createDirIfNotPresent(preferences.templateDir);
     mainWindow = createMainWindow();
 });
 
@@ -174,7 +228,55 @@ function handleUpdateCheck(notifyNoUpdates, updateCheckResult) {
     }
 };
 
+// Preferences listeners
+
+ipcMain.on('find-template-dir', () => {
+    preferencesWindow.send('template-dir-found', cachedPreferences.templateDir);
+});
+
+ipcMain.on('update-preferences', (event, prefs) => {
+    // Check that the filepath is valid
+    !fs.exists(prefs.templateDir, (exists) => {
+        if (exists) {
+            fs.writeFile(PREFERENCES_FILE, JSON.stringify(prefs), () => {
+                cachedPreferences = prefs;
+                preferencesWindow.send('preferences-updated', prefs);
+            });
+        } else {
+            dialog.showErrorBox('Error', 'This directory does not exist. Please enter a valid filepath.');
+        }
+    })
+    
+});
+
+ipcMain.on('restore-default-prefs', () => {
+    const options = {
+        type: 'question',
+        buttons: ['Yes', 'No'],
+        message: 'Are you sure you want to restore default preferences? This operation cannot be undone.'
+    };
+    const install = dialog.showMessageBox(preferencesWindow, options);
+    if (install === 0) {
+        fs.writeFile(PREFERENCES_FILE, JSON.stringify(DEFAULT_PREFERENCES), (err) => {
+            cachedPreferences = DEFAULT_PREFERENCES;
+            preferencesWindow.send('preferences-updated', DEFAULT_PREFERENCES);
+        });
+    }
+});
+
+ipcMain.on('select-template-dir', () => {
+    dialog.showOpenDialog(preferencesWindow, {
+        title: 'Select User Template Directory',
+        properties: ['openDirectory', 'createDirectory', 'showHiddenFiles']
+    }, function (filepaths) {
+        if (filepaths) {
+            preferencesWindow.send('template-dir-selected', filepaths);
+        }
+    });
+});
+
 // Autoupdate listeners
+
 autoUpdater.on('error', (ev, err) => {
     mainWindow.send('menu-reset-check-for-updates');
     dialog.showErrorBox('Error', 'Error encountered when checking for updates:\n\n' + err);
