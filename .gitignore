@@ -3,3 +3,4 @@ npm-debug.log
 bundle.*
 dist
 app/fonts/out
+.idea

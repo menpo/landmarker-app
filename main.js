@@ -3,6 +3,7 @@
 const { app, dialog, BrowserWindow, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const request = require('request-json');
+const path = require('path');
 const appVersion = require('./package.json').version;
 
 require('electron').crashReporter.start({companyName: 'menpo', submitURL: '', uploadToServer: false});
@@ -13,6 +14,9 @@ var CLIENT = request.createClient('https://api.github.com/repos/menpo/landmarker
 CLIENT.headers['Accept'] = 'application/vnd.github.v3+json';
 
 autoUpdater.autoDownload = false;
+
+const MENPO_PORT = '5001';
+var menpoProcess = null;
 
 var mainWindow;
 
@@ -52,7 +56,12 @@ app.on('activate-with-no-open-windows', function () {
 });
 
 app.on('ready', function () {
+    createPyProc();
     mainWindow = createMainWindow();
+});
+
+app.on('will-quit', function () {
+    exitPyProc();
 });
 
 ipcMain.on('close', function () {
@@ -176,3 +185,16 @@ autoUpdater.on('update-downloaded', (ev, info) => {
         autoUpdater.quitAndInstall();
     }
 });
+
+// Menpo child process
+
+function createPyProc () {
+  let port = MENPO_PORT;
+  let script = path.join(__dirname, 'menpo', 'api.py');
+  menpoProcess = require('child_process').spawn('python', [script, port]);
+}
+
+function exitPyProc () {
+  menpoProcess.kill();
+  menpoProcess = null;
+}
