@@ -4,6 +4,7 @@ const { app, dialog, BrowserWindow, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const request = require('request-json');
 const path = require('path');
+const isDev = require('electron-is-dev');
 const appVersion = require('./package.json').version;
 
 require('electron').crashReporter.start({companyName: 'menpo', submitURL: '', uploadToServer: false});
@@ -99,7 +100,7 @@ ipcMain.on('fs-backend-select-template', function () {
 });
 
 ipcMain.on('check-for-updates', function (event, notifyNoUpdates) {
-    if (process.platform === 'linux' || autoUpdater === undefined
+    if (isDev || process.platform === 'linux' || autoUpdater === undefined
     || autoUpdater.checkForUpdates === undefined) {
         checkLatestVersion(notifyNoUpdates);
     } else {
@@ -192,13 +193,8 @@ autoUpdater.on('update-downloaded', (ev, info) => {
 
 // Menpo child process
 
-function guessPackaged () {
-    const fullPath = path.join(__dirname, MENPO_DIST_FOLDER);
-    return require('fs').existsSync(fullPath);
-}
-
 function getScriptPath () {
-    if (!guessPackaged()) {
+    if (isDev) {
         return path.join(__dirname, MENPO_FOLDER, MENPO_MODULE + '.py');
     }
     if (process.platform === 'win32') {
@@ -211,10 +207,10 @@ function createPyProc () {
     let port = MENPO_PORT;
     let script = getScriptPath();
 
-    if (guessPackaged()) {
-        menpoProcess = require('child_process').execFile(script, [port]);
-    } else {
+    if (isDev) {
         menpoProcess = require('child_process').spawn('python', [script, port]);
+    } else {
+        menpoProcess = require('child_process').execFile(script, [port]);
     }
 }
 
