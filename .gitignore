@@ -4,3 +4,4 @@ bundle.*
 dist
 app/fonts/out
 .idea
+*.spec

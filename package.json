@@ -21,6 +21,22 @@
     "nsis": {
       "perMachine": true
     },
+    "files": [
+      "**/*",
+      "!menpo${/*}",
+      "!.git${/*}",
+      "!.editorconfig",
+      "!.esformatter",
+      "!.eslintrc",
+      "!.gitignore",
+      "!.gitmodules",
+      "!.travis.yml",
+      "!appveyor.yml",
+      "!LICENSE",
+      "!readme.md",
+      "!tsconfig.json",
+      "!tslint.json"
+    ],
     "publish": [
       {
         "provider": "github"

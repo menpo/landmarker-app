@@ -16,6 +16,9 @@ CLIENT.headers['Accept'] = 'application/vnd.github.v3+json';
 autoUpdater.autoDownload = false;
 
 const MENPO_PORT = '5001';
+const MENPO_DIST_FOLDER = 'menpodist'
+const MENPO_FOLDER = 'menpo'
+const MENPO_MODULE = 'api'
 var menpoProcess = null;
 
 var mainWindow;
@@ -161,9 +164,10 @@ function handleUpdateCheck(notifyNoUpdates, updateCheckResult) {
         }
         mainWindow.send('menu-reset-check-for-updates');
     }
-};
+}
 
 // Autoupdate listeners
+
 autoUpdater.on('error', (ev, err) => {
     mainWindow.send('menu-reset-check-for-updates');
     dialog.showErrorBox('Error', 'Error encountered when checking for updates:\n\n' + err);
@@ -188,13 +192,33 @@ autoUpdater.on('update-downloaded', (ev, info) => {
 
 // Menpo child process
 
+function guessPackaged () {
+    const fullPath = path.join(__dirname, MENPO_DIST_FOLDER);
+    return require('fs').existsSync(fullPath);
+}
+
+function getScriptPath () {
+    if (!guessPackaged()) {
+        return path.join(__dirname, MENPO_FOLDER, MENPO_MODULE + '.py');
+    }
+    if (process.platform === 'win32') {
+        return path.join(__dirname, MENPO_DIST_FOLDER, MENPO_MODULE, MENPO_MODULE + '.exe');
+    }
+    return path.join(__dirname, MENPO_DIST_FOLDER, MENPO_MODULE, MENPO_MODULE);
+}
+
 function createPyProc () {
-  let port = MENPO_PORT;
-  let script = path.join(__dirname, 'menpo', 'api.py');
-  menpoProcess = require('child_process').spawn('python', [script, port]);
+    let port = MENPO_PORT;
+    let script = getScriptPath();
+
+    if (guessPackaged()) {
+        menpoProcess = require('child_process').execFile(script, [port]);
+    } else {
+        menpoProcess = require('child_process').spawn('python', [script, port]);
+    }
 }
 
 function exitPyProc () {
-  menpoProcess.kill();
-  menpoProcess = null;
+    menpoProcess.kill();
+    menpoProcess = null;
 }
