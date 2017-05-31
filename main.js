@@ -5,6 +5,7 @@ const { autoUpdater } = require('electron-updater');
 const request = require('request-json');
 const path = require('path');
 const fs = require('fs');
+const isDev = require('electron-is-dev');
 const appVersion = require('./package.json').version;
 
 require('electron').crashReporter.start({companyName: 'menpo', submitURL: '', uploadToServer: false});
@@ -161,7 +162,7 @@ ipcMain.on('open-preferences', function() {
 });
 
 ipcMain.on('check-for-updates', function (event, notifyNoUpdates) {
-    if (process.platform === 'linux' || autoUpdater === undefined
+    if (isDev || process.platform === 'linux' || autoUpdater === undefined
     || autoUpdater.checkForUpdates === undefined) {
         checkLatestVersion(notifyNoUpdates);
     } else {
