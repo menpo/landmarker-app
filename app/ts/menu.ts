@@ -91,10 +91,16 @@ const mainMenuTemplate = [{
         label: 'Export',
         accelerator: 'Super+Shift+S',
         click: () => bus.emit(EVENTS.EXPORT)
-    }, {
+    }]
+}, {
+    label: 'Template',
+    submenu: [{
         label: 'Open template',
         accelerator: 'Super+T',
         click: () => bus.emit(EVENTS.OPEN_TEMPLATE)
+    }, {
+        label: 'Create template',
+        click: () => bus.emit(EVENTS.OPEN_TEMPLATE_MODAL)
     }]
 }, {
     label: 'Help',
@@ -130,7 +136,7 @@ ipcRenderer.on('menu-disable-check-for-updates', function() {
     checkForUpdatesMenuItem.label = 'Checking for updates...'
 })
 
-ipcRenderer.on('menu-rename-check-for-updates', function(label) {
+ipcRenderer.on('menu-rename-check-for-updates', function(event, label) {
     checkForUpdatesMenuItem.label = label
 })
 

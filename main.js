@@ -5,6 +5,7 @@ const { autoUpdater } = require('electron-updater');
 const request = require('request-json');
 const path = require('path');
 const fs = require('fs');
+const yaml = require('js-yaml');
 const isDev = require('electron-is-dev');
 const appVersion = require('./package.json').version;
 
@@ -171,6 +172,30 @@ ipcMain.on('check-for-updates', function (event, notifyNoUpdates) {
     }
 });
 
+ipcMain.on('save-template', function (event, title, yamlObj) {
+    const templateFile = path.join(cachedPreferences.templateDir, title + '.yml');
+    fs.exists(templateFile, (exists) => {
+        if (exists) {
+            mainWindow.send('template-saved', 'The template title already exists');
+        } else {
+            let yamlString;
+            try {
+                yamlString = yaml.safeDump(yamlObj);
+            } catch(e) {
+                mainWindow.send('template-saved', e.message);
+                return;
+            }
+            fs.writeFile(templateFile, yaml.safeDump(yamlObj), (err) => {
+                if (err) {
+                    mainWindow.send('template-saved', err);
+                    return;
+                }
+                mainWindow.send('template-saved');
+            });
+        }
+    });
+});
+
 function checkLatestVersion(notifyNoUpdates) {
     CLIENT.get('releases/latest', function(err, res, body) {
         if (err || body === undefined || body.tag_name === undefined) {
@@ -237,7 +262,7 @@ ipcMain.on('find-template-dir', () => {
 
 ipcMain.on('update-preferences', (event, prefs) => {
     // Check that the filepath is valid
-    !fs.exists(prefs.templateDir, (exists) => {
+    fs.exists(prefs.templateDir, (exists) => {
         if (exists) {
             fs.writeFile(PREFERENCES_FILE, JSON.stringify(prefs), () => {
                 cachedPreferences = prefs;
@@ -246,8 +271,7 @@ ipcMain.on('update-preferences', (event, prefs) => {
         } else {
             dialog.showErrorBox('Error', 'This directory does not exist. Please enter a valid filepath.');
         }
-    })
-    
+    });
 });
 
 ipcMain.on('restore-default-prefs', () => {

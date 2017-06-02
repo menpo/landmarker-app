@@ -16,12 +16,13 @@ import Config from '../../landmarker.io/src/ts/app/model/config'
 import { KeyboardShortcutsHandler } from '../../landmarker.io/src/ts/app/view/keyboard'
 import { notify } from '../../landmarker.io/src/ts/app/view/notification'
 import Modal from '../../landmarker.io/src/ts/app/view/modal'
-import { App, AppOptions } from '../../landmarker.io/src/ts/app/model/app'
+import { ExtendedApp } from './app'
+import { AppOptions } from '../../landmarker.io/src/ts/app/model/app'
 import * as Asset from '../../landmarker.io/src/ts/app/model/asset'
 import { Backend, Server } from '../../landmarker.io/src/ts/app/backend'
 import * as AssetView from '../../landmarker.io/src/ts/app/view/asset'
 
-import { ReactBridge } from '../../landmarker.io/src/ts/app/view/reactbridge'
+import { ExtendedReactBridge } from './reactbridge'
 import { BackboneViewport } from '../../landmarker.io/src/ts/app/view/bbviewport'
 
 import FSBackend from './fs_backend'
@@ -38,9 +39,9 @@ function init (backend: Backend, mode: 'image' | 'mesh') {
 
     THREE.ImageUtils.crossOrigin = ''
     const appInit: AppOptions = { backend, mode }
-    app = new App(appInit)
+    app = new ExtendedApp(appInit)
 
-    new ReactBridge(app)
+    new ExtendedReactBridge(app)
 
     new AssetView.AssetNameView({model: app})
     new AssetView.AssetIndexView({model: app})
@@ -63,6 +64,10 @@ function init (backend: Backend, mode: 'image' | 'mesh') {
         if (app) {
             app._initCollections()
         }
+    })
+
+    bus.on(EVENTS.OPEN_TEMPLATE_MODAL, function() {
+        app.openTemplateCreationModal()
     })
 
     // Custom collection name

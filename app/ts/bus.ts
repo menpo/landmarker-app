@@ -12,6 +12,7 @@ export const RESTART = 'RESTART'
 export const SHOW_HELP = 'SHOW_HELP'
 export const OPEN_FILES = 'OPEN_FILES'
 export const OPEN_TEMPLATE = 'OPEN_TEMPLATE'
+export const OPEN_TEMPLATE_MODAL = 'OPEN_TEMPLATE_MODAL'
 export const SAVE = 'SAVE'
 export const EXPORT = 'EXPORT'
 
