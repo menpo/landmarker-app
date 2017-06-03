@@ -15,7 +15,6 @@ import * as drop from 'drag-drop'
 import Config from '../../landmarker.io/src/ts/app/model/config'
 import { KeyboardShortcutsHandler } from '../../landmarker.io/src/ts/app/view/keyboard'
 import { notify } from '../../landmarker.io/src/ts/app/view/notification'
-import Modal from '../../landmarker.io/src/ts/app/view/modal'
 import { App, AppOptions } from '../../landmarker.io/src/ts/app/model/app'
 import * as Asset from '../../landmarker.io/src/ts/app/model/asset'
 import { Backend, Server } from '../../landmarker.io/src/ts/app/backend'
@@ -127,8 +126,7 @@ function _changeAssets () {
 }
 
 function changeAssets () {
-    Modal.confirm(
-        'Are you sure you want to change current assets collection ?', _changeAssets)
+    app.openConfirmModal('Are you sure you want to change current assets collection ?', _changeAssets)
 }
 
 bus.on(EVENTS.RESTART, () => {
