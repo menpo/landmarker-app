@@ -50,11 +50,10 @@ export function TemplateCreationGroup(props: TemplateGroupProps) {
         <br/>
         <div className="ConnectivityInfo">
             { props.connectivityInfoVisible ?
-            <i>In the form 'a b' (connection) or 'a:b' (chained connection) where
-            'a' and 'b' are landmark indices from zero up to (but not including) the 'number of landmarks'
-            value for this group. A connection 'a b' means that 'a' is connected to 'b'. A chained
-            connection 'a:b' means that 'a' is connected to 'a+1' which is connected to 'a+2' and so on
-            up to 'b'.<br/></i>
+            <i>In the form 'a b' where 'a' and 'b' are landmark indices from zero up to (but not including)
+            the 'number of landmarks' value for this group. A direct connection 'a b' means that 'a' is
+            connected to 'b'. A chained connection 'a b' means that 'a' is connected to 'a+1' which is
+            connected to 'a+2' and so on up to 'b'.<br/></i>
             : null
             }
             <a href="#" onClick={() => {props.toggleConnectivityInfo(); return false;}}>{props.connectivityInfoVisible ? <i>Less info</i> : <i>More info...</i>}</a>
@@ -65,7 +64,7 @@ export function TemplateCreationGroup(props: TemplateGroupProps) {
                 <div>
                     {directConnections}
                 </div>
-                <div className="AddAction ActionButton" onClick={() => props.addDirect()}>Add connection</div>
+                <div className="AddAction ActionButton" onClick={() => props.addDirect()}>Add direct connection</div>
             </div>
             <div className="ConnectionsSection">
                 <div>
