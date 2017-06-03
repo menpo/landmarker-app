@@ -4,16 +4,30 @@ const { app, dialog, BrowserWindow, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const request = require('request-json');
 const path = require('path');
+const fs = require('fs');
+const yaml = require('js-yaml');
 const isDev = require('electron-is-dev');
 const appVersion = require('./package.json').version;
 
 require('electron').crashReporter.start({companyName: 'menpo', submitURL: '', uploadToServer: false});
 
-var APP_NAME = 'Landmarker';
-var INDEX = 'file://' + __dirname + '/app/index.html';
-var CLIENT = request.createClient('https://api.github.com/repos/menpo/landmarker-app/');
+const APP_NAME = 'Landmarker';
+const PREFERENCES_NAME = 'Preferences';
+const INDEX = 'file://' + __dirname + '/app/index.html';
+const PREFERENCES = 'file://' + __dirname + '/app/preferences.html';
+const CLIENT = request.createClient('https://api.github.com/repos/menpo/landmarker-app/');
 CLIENT.headers['Accept'] = 'application/vnd.github.v3+json';
 
+const USER_DATA_DIR = app.getPath('userData');
+const DEFAULT_TEMPLATE_DIR = path.join(USER_DATA_DIR, 'usertemplates');
+const PREFERENCES_FILE = path.join(USER_DATA_DIR, 'preferences.json')
+const DEFAULT_PREFERENCES = {
+    templateDir: DEFAULT_TEMPLATE_DIR
+}
+
+var cachedPreferences;
+
+// Stop autoUpdate from downloading the update without the user's permission
 autoUpdater.autoDownload = false;
 
 const MENPO_PORT = '5001';
@@ -22,10 +36,9 @@ const MENPO_FOLDER = 'menpo'
 const MENPO_MODULE = 'api'
 var menpoProcess = null;
 
-var mainWindow;
+var mainWindow, preferencesWindow;
 
 function createMainWindow () {
-
     var _window = new BrowserWindow({
         title: APP_NAME,
         width: 1200,
@@ -38,13 +51,62 @@ function createMainWindow () {
     });
 
     _window.loadURL(INDEX);
-    _window.on('closed', onClosed);
+    _window.on('closed', function() {
+        mainWindow = null;
+    });
     //_window.openDevTools();
     return _window;
 }
 
-function onClosed () {
-    mainWindow = null;
+function createPreferencesWindow () {
+    var _window = new BrowserWindow({
+        title: PREFERENCES_NAME,
+        width: 445,
+        height: 80,
+        resizable: false,
+        parent: mainWindow
+    });
+
+    _window.loadURL(PREFERENCES);
+    _window.on('closed', function() {
+        preferencesWindow = null;
+    });
+    //_window.openDevTools();
+    return _window;
+}
+
+function createDirIfNotPresent (dirPath) {
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath);
+    } else if (!fs.lstatSync(dirPath).isDirectory()) {
+        fs.unlinkSync(dirPath);
+        fs.mkdirSync(dirPath);
+    }
+}
+
+function createPreferencesFileIfNotPresent () {
+    if (!fs.existsSync(PREFERENCES_FILE)) {
+        // Preferences file does not exist
+        fs.writeFileSync(PREFERENCES_FILE, JSON.stringify(DEFAULT_PREFERENCES));
+        cachedPreferences = DEFAULT_PREFERENCES;
+    } else {
+        var preferences;
+        try {
+            // Check that syntax is valid
+            preferences = JSON.parse(fs.readFileSync(PREFERENCES_FILE, 'utf8'));
+            // Check that structure is valid
+            if (preferences.templateDir === undefined) {
+                // Add default template directory to preferences
+                preferences.templateDir = DEFAULT_TEMPLATE_DIR;
+                fs.writeFileSync(PREFERENCES_FILE, JSON.stringify(preferences));
+            }
+            cachedPreferences = preferences;
+        } catch(e) {
+            // Syntax invalid - replace with defaults
+            fs.writeFileSync(PREFERENCES_FILE, JSON.stringify(DEFAULT_PREFERENCES));
+            cachedPreferences = DEFAULT_PREFERENCES;
+        }
+    }
 }
 
 app.on('window-all-closed', function () {
@@ -61,6 +123,14 @@ app.on('activate-with-no-open-windows', function () {
 
 app.on('ready', function () {
     createPyProc();
+    // Use synchronous operations in initialisation
+    createDirIfNotPresent(USER_DATA_DIR);
+    // Create prefs file if not present and restore it to defaults if it is invalid
+    createPreferencesFileIfNotPresent();
+    createDirIfNotPresent(DEFAULT_TEMPLATE_DIR);
+    // Check that current template directory exists
+    const preferences = JSON.parse(fs.readFileSync(PREFERENCES_FILE, 'utf8'));
+    createDirIfNotPresent(preferences.templateDir);
     mainWindow = createMainWindow();
 });
 
@@ -99,6 +169,10 @@ ipcMain.on('fs-backend-select-template', function () {
     });
 });
 
+ipcMain.on('open-preferences', function() {
+    preferencesWindow = createPreferencesWindow();
+});
+
 ipcMain.on('check-for-updates', function (event, notifyNoUpdates) {
     if (isDev || process.platform === 'linux' || autoUpdater === undefined
     || autoUpdater.checkForUpdates === undefined) {
@@ -107,6 +181,30 @@ ipcMain.on('check-for-updates', function (event, notifyNoUpdates) {
         mainWindow.send('menu-disable-check-for-updates');
         autoUpdater.checkForUpdates().then(handleUpdateCheck.bind(null, notifyNoUpdates));
     }
+});
+
+ipcMain.on('save-template', function (event, title, yamlObj) {
+    const templateFile = path.join(cachedPreferences.templateDir, title + '.yml');
+    fs.exists(templateFile, (exists) => {
+        if (exists) {
+            mainWindow.send('template-saved', 'The template title already exists');
+        } else {
+            let yamlString;
+            try {
+                yamlString = yaml.safeDump(yamlObj);
+            } catch(e) {
+                mainWindow.send('template-saved', e.message);
+                return;
+            }
+            fs.writeFile(templateFile, yaml.safeDump(yamlObj), (err) => {
+                if (err) {
+                    mainWindow.send('template-saved', err);
+                    return;
+                }
+                mainWindow.send('template-saved');
+            });
+        }
+    });
 });
 
 function checkLatestVersion(notifyNoUpdates) {
@@ -166,6 +264,52 @@ function handleUpdateCheck(notifyNoUpdates, updateCheckResult) {
         mainWindow.send('menu-reset-check-for-updates');
     }
 }
+
+// Preferences listeners
+
+ipcMain.on('find-template-dir', () => {
+    preferencesWindow.send('template-dir-found', cachedPreferences.templateDir);
+});
+
+ipcMain.on('update-preferences', (event, prefs) => {
+    // Check that the filepath is valid
+    fs.exists(prefs.templateDir, (exists) => {
+        if (exists) {
+            fs.writeFile(PREFERENCES_FILE, JSON.stringify(prefs), () => {
+                cachedPreferences = prefs;
+                preferencesWindow.send('preferences-updated', prefs);
+            });
+        } else {
+            dialog.showErrorBox('Error', 'This directory does not exist. Please enter a valid filepath.');
+        }
+    });
+});
+
+ipcMain.on('restore-default-prefs', () => {
+    const options = {
+        type: 'question',
+        buttons: ['Yes', 'No'],
+        message: 'Are you sure you want to restore default preferences? This operation cannot be undone.'
+    };
+    const install = dialog.showMessageBox(preferencesWindow, options);
+    if (install === 0) {
+        fs.writeFile(PREFERENCES_FILE, JSON.stringify(DEFAULT_PREFERENCES), (err) => {
+            cachedPreferences = DEFAULT_PREFERENCES;
+            preferencesWindow.send('preferences-updated', DEFAULT_PREFERENCES);
+        });
+    }
+});
+
+ipcMain.on('select-template-dir', () => {
+    dialog.showOpenDialog(preferencesWindow, {
+        title: 'Select User Template Directory',
+        properties: ['openDirectory', 'createDirectory']
+    }, function (filepaths) {
+        if (filepaths) {
+            preferencesWindow.send('template-dir-selected', filepaths);
+        }
+    });
+});
 
 // Autoupdate listeners
 

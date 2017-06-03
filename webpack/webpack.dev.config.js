@@ -1,6 +1,10 @@
 var webpackConfig = require("./webpack.base.config.js");
-webpackConfig.devtool = "source-map";
-webpackConfig.debug = true;
-webpackConfig.output.publicPath = '/';
+
+for (var i = 0; i < webpackConfig.length; i++) {
+    var config = webpackConfig[i];
+    config.devtool = "source-map";
+    config.debug = true;
+    config.output.publicPath = '/';
+}
 
 module.exports = webpackConfig;

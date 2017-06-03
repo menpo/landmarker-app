@@ -1,0 +1,103 @@
+.TemplateCreationModal {
+
+    input {
+        @extend %transitionAll;
+        margin: 2%;
+        padding: 0 .5em;
+        line-height: 28px;
+        border: 1px solid $colorLightGray;
+        border-radius: 2px;
+        width: 96%;
+        outline: none;
+        font-size: 1.2em;
+
+        &:active,
+        &:focus {
+            border: 1px solid $colorBlue;
+        }
+    }
+
+    .TemplateCreationField {
+        white-space: nowrap;
+        display: table;
+        width: 96%;
+
+        * {
+            display: table-cell;
+        }
+    }
+
+    .TemplateCreationGroup {
+        border: 2px solid $colorLightGray;
+        padding: .7em;
+        margin: 2% 0%;
+
+        .ConnectivityInfo {
+            margin: .5em 0 0 0;
+        }
+    }
+
+    .TemplateConnections {
+        display: flex;
+
+        .ConnectionsSection {
+            flex: 1;
+            margin: 0 .3em;
+
+            .ConnectionFields {
+                display: flex;
+                align-items: center;
+
+                input {
+                    flex: 1;
+                }
+            }
+
+            .AddAction {
+                margin: .3em 0 .5em 0;
+            }
+        }
+    }
+
+}
+
+.ActionButton {
+    @extend %transitionAll;
+    color: white;
+    flex: 1;
+    cursor: pointer;
+    text-align: center;
+    height: 46px;
+    line-height: 46px;
+}
+
+.SubmitAction {
+    margin: .5em 0 0 0;
+    background: $colorGreen;
+    &:hover {
+        background: $colorDarkGreen;
+    }
+}
+
+.AddAction {
+    background: $colorBlue;
+    &:hover {
+        background: $colorDarkBlue;
+    }
+}
+
+.RemoveAction {
+    background: $colorRed;
+    &:hover {
+        background: $colorDarkRed;
+    }
+}
+
+.RemoveConnection {
+    width: 21px;
+    height: 21px;
+    cursor: pointer;
+    text-align: center;
+    border: 1px solid $colorDarkGray;
+    border-radius: 4px;
+}
