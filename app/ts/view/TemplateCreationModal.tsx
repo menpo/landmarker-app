@@ -14,9 +14,10 @@ export function TemplateCreationModal(props: TemplateCreationModalProps) {
     let groups: any[] = []
     for (let i = 0; i < props.groups.length; i++) {
         let groupProps: TemplateGroupProps = props.groups[i]
-        groups.push(<TemplateCreationGroup key={i} groupId={i} label={groupProps.label} landmarks={groupProps.landmarks} setLabel={groupProps.setLabel}
-        setLandmarks={groupProps.setLandmarks} removeGroup={groupProps.removeGroup} addDirect={groupProps.addDirect} addChained={groupProps.addChained}
-        directConnections={groupProps.directConnections} chainedConnections={groupProps.chainedConnections}/>)
+        groups.push(<TemplateCreationGroup key={i} groupId={i} label={groupProps.label} landmarks={groupProps.landmarks}
+        connectivityInfoVisible={groupProps.connectivityInfoVisible} toggleConnectivityInfo={groupProps.toggleConnectivityInfo}
+        setLabel={groupProps.setLabel} setLandmarks={groupProps.setLandmarks} removeGroup={groupProps.removeGroup} addDirect={groupProps.addDirect}
+        addChained={groupProps.addChained} directConnections={groupProps.directConnections} chainedConnections={groupProps.chainedConnections}/>)
     }
 
     return (
@@ -29,8 +30,8 @@ export function TemplateCreationModal(props: TemplateCreationModalProps) {
             <div id="templateGroups">
                 {groups}
             </div>
-            <button onClick={() => props.addGroup()}>Add group</button>
-            <div className="SubmitAction" onClick={() => props.submit()}>Submit</div>
+            <div className="AddAction ActionButton" onClick={() => props.addGroup()}>Add group</div>
+            <div className="SubmitAction ActionButton" onClick={() => props.submit()}>Submit</div>
         </div>
     </Modal>
     )

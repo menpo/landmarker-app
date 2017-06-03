@@ -5,6 +5,8 @@ export interface TemplateGroupProps {
     groupId: number
     label: string
     landmarks: string
+    connectivityInfoVisible: boolean
+    toggleConnectivityInfo: () => void
     setLabel: (value: string) => void
     setLandmarks: (value: string) => void
     removeGroup: () => void
@@ -34,7 +36,7 @@ export function TemplateCreationGroup(props: TemplateGroupProps) {
     }
 
     return (
-    <div>
+    <div className="TemplateCreationGroup">
         <b>Group {props.groupId + 1}</b>
         <div className="TemplateCreationField">
             <label htmlFor={`groupLabel${props.groupId}`}>Group label:</label>
@@ -46,18 +48,33 @@ export function TemplateCreationGroup(props: TemplateGroupProps) {
         </div>
         Landark connectivity
         <br/>
-        <i>In the form 'a b' (connection) or 'a:b' (chained connection) where
-        'a' and 'b' are landmark indices from zero up to (but not including) the 'number of landmarks'
-        value for this group. A connection 'a b' means that 'a' is connected to 'b'. A chained
-        connection 'a:b' means that 'a' is connected to 'a+1' which is connected to 'a+2' and so on
-        up to 'b'.</i>
+        <div className="ConnectivityInfo">
+            { props.connectivityInfoVisible ?
+            <i>In the form 'a b' (connection) or 'a:b' (chained connection) where
+            'a' and 'b' are landmark indices from zero up to (but not including) the 'number of landmarks'
+            value for this group. A connection 'a b' means that 'a' is connected to 'b'. A chained
+            connection 'a:b' means that 'a' is connected to 'a+1' which is connected to 'a+2' and so on
+            up to 'b'.<br/></i>
+            : null
+            }
+            <a href="#" onClick={() => {props.toggleConnectivityInfo(); return false;}}>{props.connectivityInfoVisible ? <i>Less info</i> : <i>More info...</i>}</a>
+        </div>
         <br/>
-        {directConnections}
-        <button onClick={() => props.addDirect()}>Add connection</button>
-        {chainedConnections}
-        <button onClick={() => props.addChained()}>Add chained connection</button>
-        <br/>
-        <button onClick={() => props.removeGroup()}>Remove group</button>
+        <div className="TemplateConnections">
+            <div className="ConnectionsSection">
+                <div>
+                    {directConnections}
+                </div>
+                <div className="AddAction ActionButton" onClick={() => props.addDirect()}>Add connection</div>
+            </div>
+            <div className="ConnectionsSection">
+                <div>
+                    {chainedConnections}
+                </div>
+                <div className="AddAction ActionButton" onClick={() => props.addChained()}>Add chained connection</div>
+            </div>
+        </div>
+        <div className="RemoveAction ActionButton" onClick={() => props.removeGroup()}>Remove group</div>
     </div>
     )
 }

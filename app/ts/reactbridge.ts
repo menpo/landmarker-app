@@ -47,6 +47,8 @@ export class ExtendedReactBridge extends ReactBridge {
                 groupId: i,
                 label: groups[i].label || '',
                 landmarks: groups[i].landmarks || '',
+                connectivityInfoVisible: groups[i].connectivityInfoVisible,
+                toggleConnectivityInfo: () => app.toggleConnectivityInfo(i),
                 setLabel: (value: string) => app.setTemplateGroupLabel(value, i),
                 setLandmarks: (value: string) => app.setTemplateGroupLandmarks(value, i),
                 removeGroup: () => app.removeTemplateGroup(i),

@@ -20,6 +20,7 @@ export interface TemplateLandmarkConnectionState {
 export interface TemplateGroupState {
     label?: string
     landmarks?: string
+    connectivityInfoVisible: boolean
     directConnections: TemplateLandmarkConnectionState[]
     chainedConnections: TemplateLandmarkConnectionState[]
 }
@@ -74,6 +75,7 @@ export class ExtendedApp extends App {
     addTemplateCreationGroup(): void {
         let modalState: TemplateCreationModalState = <TemplateCreationModalState>this.activeAuxModalState
         let group: TemplateGroupState = {
+            connectivityInfoVisible: false,
             directConnections: [],
             chainedConnections: []
         }
@@ -239,6 +241,13 @@ export class ExtendedApp extends App {
             return `The ${firstPart ? 'first' : 'second'} connection value for ${direct ? 'Direct' : 'Chained'} Connection ${connectionIndex+1} in Group ${groupIndex+1} should be between 0 and the landmarks value (exclusive)`
         }
         return undefined
+    }
+
+    toggleConnectivityInfo(groupIndex: number): void {
+        let modalState: TemplateCreationModalState = <TemplateCreationModalState>this.activeAuxModalState
+        modalState.groups[groupIndex].connectivityInfoVisible = !modalState.groups[groupIndex].connectivityInfoVisible
+        // re-render
+        this.trigger('change:activeAuxModalType')
     }
     
     setTemplateGroupLabel(value: string, groupIndex: number): void {

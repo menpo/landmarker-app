@@ -10,10 +10,10 @@ export interface TemplateConnectionProps {
 
 export function TemplateCreationLandmarkConnection(props: TemplateConnectionProps) {
     return (
-    <div>
+    <div className="ConnectionFields">
         <input value={props.first} onChange={(event) => props.setFirst(event.target.value)} type="text"/>
         <input value={props.second} onChange={(event) => props.setSecond(event.target.value)} type="text"/>
-        <button onClick={() => props.removeConnection()}>&times;</button>
+        <div className="RemoveConnection" onClick={() => props.removeConnection()}>&times;</div>
     </div>
     )
 }
