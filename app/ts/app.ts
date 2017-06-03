@@ -140,7 +140,6 @@ export class ExtendedApp extends App {
     }
 
     checkTemplateCreationForm(): string | undefined {
-        // TODO check whether connections can overlap and then do style and check that the templates work
         let modalState: TemplateCreationModalState = <TemplateCreationModalState>this.activeAuxModalState
         if (modalState.templateTitle === undefined || modalState.templateTitle === '') {
             return 'The template title has not been filled in'

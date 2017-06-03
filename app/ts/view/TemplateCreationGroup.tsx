@@ -46,7 +46,7 @@ export function TemplateCreationGroup(props: TemplateGroupProps) {
             <label htmlFor={`groupLandmarks${props.groupId}`}>Number of landmarks:</label>
             <input id={`groupLandmarks${props.groupId}`} value={props.landmarks} onChange={(event) => props.setLandmarks(event.target.value)} type="text"/>
         </div>
-        Landark connectivity
+        Landark connectivity:
         <br/>
         <div className="ConnectivityInfo">
             { props.connectivityInfoVisible ?
