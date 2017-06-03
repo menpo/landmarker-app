@@ -7,6 +7,7 @@ import { EventEmitter } from 'events'
 // Event types
 export const START_WITH_SERVER = 'START_WITH_SERVER'
 export const START_WITH_FS = 'START_WITH_FS'
+export const START_WITH_FS_SS = 'START_WITH_FS_SS'
 export const RESTART = 'RESTART'
 
 export const SHOW_HELP = 'SHOW_HELP'

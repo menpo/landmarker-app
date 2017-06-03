@@ -2,7 +2,7 @@ import * as $ from 'jquery'
 
 import Modal from '../../landmarker.io/src/ts/app/view/modal'
 
-import bus, {START_WITH_FS, START_WITH_SERVER} from './bus'
+import bus, {START_WITH_FS, START_WITH_FS_SS, START_WITH_SERVER} from './bus'
 
 import {version} from '../../package.json'
 
@@ -15,7 +15,10 @@ const contents = `\
             Load 3D files from your hard drive
         </div>\
         <div class='IntroItem IntroItem--fs2d'>\
-            Load pictures from your hard drive
+            Load images from your hard drive
+        </div>\
+        <div class='IntroItem IntroItem--fs2dss'>\
+            Load images from your hard drive (semi-supervised annotation)
         </div>\
         <div class='IntroItem IntroItem--Server'>\
             <span class="octicon octicon-globe"></span>\
@@ -37,7 +40,8 @@ const Intro = Modal.extend({
     events: {
         'click .IntroItem--Server': 'startServer',
         'click .IntroItem--fs3d': 'startFS3d',
-        'click .IntroItem--fs2d': 'startFS2d'
+        'click .IntroItem--fs2d': 'startFS2d',
+        'click .IntroItem--fs2dss': 'startFS2dSemiSupervised'
     },
 
     init: function ({cfg}) {
@@ -63,6 +67,12 @@ const Intro = Modal.extend({
 
     startFS2d: function () {
         bus.emit(START_WITH_FS, 'image')
+        this.close()
+    },
+
+    startFS2dSemiSupervised: function () {
+        bus.emit(START_WITH_FS_SS, 'image')
+        // TODO remove mesh functionality
         this.close()
     }
 })

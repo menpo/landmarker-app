@@ -24,6 +24,7 @@ import { ReactBridge } from '../../landmarker.io/src/ts/app/view/reactbridge'
 import { BackboneViewport } from '../../landmarker.io/src/ts/app/view/bbviewport'
 
 import FSBackend from './fs_backend'
+import FSMenpoBackend from './fs_menpo_backend'
 import Intro from './app_intro'
 import bus, * as EVENTS from './bus'
 import makeMenu from './menu'
@@ -96,6 +97,8 @@ function bindIntro () {
         server = new Server(url)
         server.fetchMode().then(function (mode) {
             $('#changeAssets').remove()
+            $('#minimumTrainingAssets').remove()
+            $('#automaticAnnotationInterval').remove()
             init(server, mode)
         }, function (err) {
             console.log(err)
@@ -104,6 +107,14 @@ function bindIntro () {
 
     bus.on(EVENTS.START_WITH_FS, function (mode) {
         server = new FSBackend(cfg)
+        server.setMode(mode)
+        $('#minimumTrainingAssets').remove()
+        $('#automaticAnnotationInterval').remove()
+        server.selectAssets()
+    })
+
+    bus.on(EVENTS.START_WITH_FS_SS, function (mode) {
+        server = new FSMenpoBackend(cfg)
         server.setMode(mode)
         server.selectAssets()
     })
