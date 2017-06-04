@@ -1,5 +1,6 @@
 import { App, AppOptions } from '../../landmarker.io/src/ts/app/model/app'
 import { notify } from '../../landmarker.io/src/ts/app/view/notification'
+import FSMenpoBackend from './fs_menpo_backend'
 import { ipcRenderer } from 'electron'
 
 interface YamlGroup {
@@ -38,6 +39,14 @@ export class ExtendedApp extends App {
         super(opts)
         this.set('activeAuxModalType', undefined)
         this.set('activeAuxModalState', undefined)
+        this.set('minimumTrainingAssets', 10)
+        this.set('automaticAnnotationInterval', 5)
+
+        // New collection? Need to reload the training asset queue
+        this.listenTo(this, 'change:activeCollection', this._refreshTrainingAssets)
+        this.listenTo(this, 'change:activeTemplate', this._refreshTrainingAssets)
+
+        this._refreshTrainingAssets()
     }
 
     get activeAuxModalType(): AuxModalType | undefined {
@@ -54,6 +63,28 @@ export class ExtendedApp extends App {
 
     set activeAuxModalState(activeAuxModalState: AuxModalState | undefined) {
         this.set('activeAuxModalState', activeAuxModalState)
+    }
+
+    get minimumTrainingAssets(): number {
+        return this.get('minimumTrainingAssets')
+    }
+
+    set minimumTrainingAssets(minimumTrainingAssets: number) {
+        this.set('minimumTrainingAssets', minimumTrainingAssets)
+    }
+
+    get automaticAnnotationInterval(): number {
+        return this.get('automaticAnnotationInterval')
+    }
+
+    set automaticAnnotationInterval(automaticAnnotationInterval: number) {
+        this.set('automaticAnnotationInterval', automaticAnnotationInterval)
+    }
+
+    _refreshTrainingAssets(): void {
+        if (this.backend instanceof FSMenpoBackend) {
+            (<FSMenpoBackend>this.backend).refreshTrainingAssets(this.activeTemplate)
+        }
     }
 
     openTemplateCreationModal(): void {

@@ -63,6 +63,16 @@ function commonPrefix (path1, path2) {
     return arr1.slice(0, i).join(Path.sep)
 }
 
+function checkCompleteAnnotation(ljson): boolean {
+    for (let i = 0; i < ljson.landmarks.points.length; i++) {
+        if (ljson.landmarks.points[i][0] === null) {
+            // Incomplete annotation
+            return false
+        }
+    }
+    return true
+}
+
 const DROP_TYPE = {
     ASSET: 'ASSET',
     TEMPLATE: 'TEMPLATE'
@@ -84,6 +94,8 @@ export default class FSMenpoBackend implements Backend {
 
     _cfg
     _pickTemplateCallback: {success, error} | undefined
+
+    _trainingAssets: string[] = []
 
     constructor(cfg) {
         this._cfg = cfg
@@ -111,7 +123,7 @@ export default class FSMenpoBackend implements Backend {
         bus.emit(EVENTS.FS_CHANGED_ASSETS)
 
         this._cfg.set({
-            FS_ASSETS: this._assets
+            FS_MENPO_ASSETS: this._assets
         }, true)
 
     }
@@ -131,7 +143,7 @@ export default class FSMenpoBackend implements Backend {
             this.mode = this.mode || 'image'
         }
 
-        this._cfg.set({FS_MODE: this.mode}, true)
+        this._cfg.set({FS_MENPO_MODE: this.mode}, true)
     }
 
     selectAssets() {
@@ -361,7 +373,7 @@ export default class FSMenpoBackend implements Backend {
     }
 
     fetchGeometry(assetId) {
-        console.time(`FSBackend#fetchGeometry#${assetId}`)
+        console.time(`FSMenpoBackend#fetchGeometry#${assetId}`)
         const assetPath = this.pathFromId(assetId)
         const q = new Promise((resolve, reject) => {
             fs.readFile(assetPath, (err, data) => {
@@ -379,10 +391,10 @@ export default class FSMenpoBackend implements Backend {
                         for (let i = 0; i < len; ++i) {
                             view[i] = data[i]
                         }
-                        console.timeEnd(`FSBackend#fetchGeometry#${assetId}`)
+                        console.timeEnd(`FSMenpoBackend#fetchGeometry#${assetId}`)
                         resolve(STLLoader(ab))
                     } else {
-                        console.timeEnd(`FSBackend#fetchGeometry#${assetId}`)
+                        console.timeEnd(`FSMenpoBackend#fetchGeometry#${assetId}`)
                         reject(`Unrecognized extension ${ext}`)
                     }
                 }
@@ -422,6 +434,9 @@ export default class FSMenpoBackend implements Backend {
     saveLandmarkGroup(id, type, json) {
         const fpath = `${this.pathFromId(id)}_${type}.ljson`
         const async = loading.start()
+        if (checkCompleteAnnotation(json)) {
+            this._trainingAssets.push(id)
+        }
         return new Promise((resolve, reject) => {
             fs.writeFile(fpath, JSON.stringify(json), 'utf8', (err) => {
                 if (err) {
@@ -489,6 +504,43 @@ export default class FSMenpoBackend implements Backend {
             console.log(`Failed to process dropped content`, errs)
         })
 
+    }
+
+    refreshTrainingAssets(type: string): void {
+        this._fetchFullyAnnotatedAssets(type).then((assetIds) => this._trainingAssets = assetIds)
+    }
+
+    _fetchFullyAnnotatedAssets(type: string): Promise<string[]> {
+        const tmpl = this._templates[type]
+        const async = loading.start()
+        return new Promise((resolve) => {
+            this.fetchCollection().then((assetIds: string[]) => {
+                let annotated: string[] = []
+                let promises: Promise<{}>[] = []
+                assetIds.forEach((assetId: string) => {
+                    const fpath = `${this.pathFromId(assetId)}_${type}.ljson`
+                    promises.push(new Promise((resolve) => {
+                        fs.readFile(fpath, (err, data) => {
+                            if (err) {
+                                resolve()
+                            } else {
+                                const [ok, json] = tmpl.validate(data.toString())
+                                if (!ok || !checkCompleteAnnotation(json)) {
+                                    resolve()
+                                    return
+                                }
+                                annotated.push(assetId)
+                                resolve()
+                            }
+                        })
+                    }))
+                })
+                Promise.all(promises).then((results) => {
+                    loading.stop(async)
+                    resolve(annotated)
+                })
+            })
+        })
     }
 
 }

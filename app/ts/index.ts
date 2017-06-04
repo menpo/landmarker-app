@@ -20,6 +20,7 @@ import { AppOptions } from '../../landmarker.io/src/ts/app/model/app'
 import * as Asset from '../../landmarker.io/src/ts/app/model/asset'
 import { Backend, Server } from '../../landmarker.io/src/ts/app/backend'
 import * as AssetView from '../../landmarker.io/src/ts/app/view/asset'
+import { MinimumTrainingAssetsView, AutomaticAnnotationIntervalView } from './view/semisupervised'
 
 import { ExtendedReactBridge } from './reactbridge'
 import { BackboneViewport } from '../../landmarker.io/src/ts/app/view/bbviewport'
@@ -45,6 +46,8 @@ function init (backend: Backend, mode: 'image' | 'mesh') {
 
     new AssetView.AssetNameView({model: app})
     new AssetView.AssetIndexView({model: app})
+    new MinimumTrainingAssetsView({model: app})
+    new AutomaticAnnotationIntervalView({model: app})
 
     var bbviewport = new BackboneViewport(document.getElementById('viewportContainer'), app)
     var viewport = bbviewport.viewport
