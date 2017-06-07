@@ -96,6 +96,8 @@ export default class FSMenpoBackend implements Backend {
     _pickTemplateCallback: {success, error} | undefined
 
     _trainingAssets: string[] = []
+    minimumTrainingAssets: number = 10
+    automaticAnnotationInterval: number = 5
 
     constructor(cfg) {
         this._cfg = cfg
@@ -416,6 +418,9 @@ export default class FSMenpoBackend implements Backend {
                 if (err) {
                     console.log(err)
                     loading.stop(async)
+                    if (this._trainingAssets.length >= this.minimumTrainingAssets) {
+                        // TODO resolve with generated landmarks
+                    }
                     resolve(tmpl.emptyLJSON(dims))
                 } else {
                     const [ok, json] = tmpl.validate(data.toString(), dims)
@@ -436,6 +441,9 @@ export default class FSMenpoBackend implements Backend {
         const async = loading.start()
         if (checkCompleteAnnotation(json)) {
             this._trainingAssets.push(id)
+        }
+        if (this._deformableModelRefreshDue()) {
+            this._refreshDeformableModel()
         }
         return new Promise((resolve, reject) => {
             fs.writeFile(fpath, JSON.stringify(json), 'utf8', (err) => {
@@ -541,6 +549,14 @@ export default class FSMenpoBackend implements Backend {
                 })
             })
         })
+    }
+
+    _deformableModelRefreshDue(): boolean {
+        return (this._trainingAssets.length - this.minimumTrainingAssets) % this.automaticAnnotationInterval === 0
+    }
+
+    _refreshDeformableModel(): void {
+        // TODO
     }
 
 }

@@ -39,8 +39,6 @@ export class ExtendedApp extends App {
         super(opts)
         this.set('activeAuxModalType', undefined)
         this.set('activeAuxModalState', undefined)
-        this.set('minimumTrainingAssets', 10)
-        this.set('automaticAnnotationInterval', 5)
 
         // New collection? Need to reload the training asset queue
         this.listenTo(this, 'change:activeCollection', this._refreshTrainingAssets)
@@ -66,19 +64,29 @@ export class ExtendedApp extends App {
     }
 
     get minimumTrainingAssets(): number {
-        return this.get('minimumTrainingAssets')
+        if (this.backend instanceof FSMenpoBackend) {
+            return (<FSMenpoBackend>this.backend).minimumTrainingAssets
+        }
+        return -1
     }
 
     set minimumTrainingAssets(minimumTrainingAssets: number) {
-        this.set('minimumTrainingAssets', minimumTrainingAssets)
+        if (this.backend instanceof FSMenpoBackend) {
+            (<FSMenpoBackend>this.backend).minimumTrainingAssets = minimumTrainingAssets
+        }
     }
 
     get automaticAnnotationInterval(): number {
-        return this.get('automaticAnnotationInterval')
+        if (this.backend instanceof FSMenpoBackend) {
+            return (<FSMenpoBackend>this.backend).automaticAnnotationInterval
+        }
+        return -1
     }
 
     set automaticAnnotationInterval(automaticAnnotationInterval: number) {
-        this.set('automaticAnnotationInterval', automaticAnnotationInterval)
+        if (this.backend instanceof FSMenpoBackend) {
+            (<FSMenpoBackend>this.backend).automaticAnnotationInterval = automaticAnnotationInterval
+        }
     }
 
     _refreshTrainingAssets(): void {
