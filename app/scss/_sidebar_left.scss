@@ -1,0 +1,33 @@
+.AutomaticAnnotationToolbox {
+    opacity: .9;
+    background: $colorLightBlue;
+    width: $toolbarWidth;
+    padding: $mainControlPadding;
+    border-top-right-radius: $mainBorderRadius;
+    border-bottom-right-radius: $mainBorderRadius;
+}
+
+.AAToolbox-Row {
+    color: white;
+    border: none;
+    outline: none;
+    padding: 5px;
+    font-weight: 300;
+    font-size: larger;
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.AAToolbox-Row-Item {
+    flex: 1;
+
+    &:first-of-type {
+        text-transform: uppercase;
+        font-weight: bold;
+        font-size: medium;
+        text-align: left;
+    }
+}

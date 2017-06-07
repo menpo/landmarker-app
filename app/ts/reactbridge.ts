@@ -1,26 +1,33 @@
 import * as ReactDom from 'react-dom'
 import { ReactBridge } from '../../landmarker.io/src/ts/app/view/reactbridge'
-import { ExtendedApp, AuxModalType, TemplateCreationModalState, TemplateGroupState, TemplateLandmarkConnectionState } from './app'
+import { ExtendedApp, AutomaticAnnotationToolboxState, AuxModalType, TemplateCreationModalState, TemplateGroupState, TemplateLandmarkConnectionState } from './app'
 import { TemplateCreationModal, TemplateCreationModalProps } from './view/TemplateCreationModal'
 import { TemplateGroupProps } from './view/TemplateCreationGroup'
 import { TemplateConnectionProps } from './view/TemplateCreationLandmarkConnection'
+import { AutomaticAnnotationToolbox, AutomaticAnnotationToolboxProps } from './view/AutomaticAnnotationToolbox'
 
 export class ExtendedReactBridge extends ReactBridge {
 
     constructor(app: ExtendedApp) {
         super(app)
 
-        app.on('change:activeAuxModalType', () => this.onactiveAuxModalChange())
+        app.on('change:activeAuxModalType', () => this.onActiveAuxModalChange())
+        app.on('change:automaticAnnotationToolboxState', () => this.onToolboxStateChange())
 
-        this.onactiveAuxModalChange()
+        this.onActiveAuxModalChange()
+        this.onToolboxStateChange()
     }
 
-    onactiveAuxModalChange(): void {
+    onActiveAuxModalChange(): void {
         if ((<ExtendedApp>this.app).activeAuxModalType == AuxModalType.TEMPLATE_CREATION) {
             this.renderTemplateCreationModal()
         } else {
             this.disposeModal()
         }
+    }
+
+    onToolboxStateChange(): void {
+        this.renderAutomaticAnnotationToolbox()
     }
 
     generateTemplateLandmarkConnections(groupId: number, direct: boolean, connections: TemplateLandmarkConnectionState[]): TemplateConnectionProps[] {
@@ -79,6 +86,26 @@ export class ExtendedReactBridge extends ReactBridge {
         const templateCreationModal = TemplateCreationModal(modalProps)
         const el = document.getElementById('modalsWrapper')
         ReactDom.render(templateCreationModal, el)
+    }
+
+    renderAutomaticAnnotationToolbox(): void {
+        let app: ExtendedApp = <ExtendedApp>this.app
+        let toolboxState: AutomaticAnnotationToolboxState = <AutomaticAnnotationToolboxState>app.automaticAnnotationToolboxState
+        let toolboxProps: AutomaticAnnotationToolboxProps = {
+            minimumTrainingAssets: toolboxState.minimumTrainingAssets,
+            automaticAnnotationInterval: toolboxState.automaticAnnotationInterval,
+            editingMinimumTrainingAssets: toolboxState.editingMinimumTrainingAssets,
+            editingAutomaticAnnotationInterval: toolboxState.editingAutomaticAnnotationInterval,
+            setMinimumTrainingAssetsField: app.setMinimumTrainingAssetsField.bind(app),
+            setAutomaticAnnotationIntervalField: app.setAutomaticAnnotationIntervalField.bind(app),
+            updateMinimumTrainingAssets: app.updateMinimumTrainingAssets.bind(app),
+            updateAutomaticAnnotationInterval: app.updateAutomaticAnnotationInterval.bind(app),
+            toggleEditingMinimumTrainingAssets: app.toggleEditingMinimumTrainingAssets.bind(app),
+            toggleEditingAutomaticAnnotationInterval: app.toggleEditingAutomaticAnnotationInterval.bind(app)
+        }
+        const automaticAnnotationToolbox = AutomaticAnnotationToolbox(toolboxProps)
+        const el = document.getElementById('automaticAnnotationToolbox')
+        ReactDom.render(automaticAnnotationToolbox, el)
     }
 
 }

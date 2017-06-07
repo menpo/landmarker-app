@@ -20,7 +20,6 @@ import { AppOptions } from '../../landmarker.io/src/ts/app/model/app'
 import * as Asset from '../../landmarker.io/src/ts/app/model/asset'
 import { Backend, Server } from '../../landmarker.io/src/ts/app/backend'
 import * as AssetView from '../../landmarker.io/src/ts/app/view/asset'
-import { MinimumTrainingAssetsView, AutomaticAnnotationIntervalView } from './view/semisupervised'
 
 import { ExtendedReactBridge } from './reactbridge'
 import { BackboneViewport } from '../../landmarker.io/src/ts/app/view/bbviewport'
@@ -46,8 +45,6 @@ function init (backend: Backend, mode: 'image' | 'mesh') {
 
     new AssetView.AssetNameView({model: app})
     new AssetView.AssetIndexView({model: app})
-    new MinimumTrainingAssetsView({model: app})
-    new AutomaticAnnotationIntervalView({model: app})
 
     var bbviewport = new BackboneViewport(document.getElementById('viewportContainer'), app)
     var viewport = bbviewport.viewport
@@ -105,8 +102,6 @@ function bindIntro () {
         server = new Server(url)
         server.fetchMode().then(function (mode) {
             $('#changeAssets').remove()
-            $('#minimumTrainingAssets').remove()
-            $('#automaticAnnotationInterval').remove()
             init(server, mode)
         }, function (err) {
             console.log(err)
@@ -116,8 +111,6 @@ function bindIntro () {
     bus.on(EVENTS.START_WITH_FS, function (mode) {
         server = new FSBackend(cfg)
         server.setMode(mode)
-        $('#minimumTrainingAssets').remove()
-        $('#automaticAnnotationInterval').remove()
         server.selectAssets()
     })
 

@@ -9,6 +9,13 @@ interface YamlGroup {
     connectivity?: string[]
 }
 
+export interface AutomaticAnnotationToolboxState {
+    minimumTrainingAssets: string
+    automaticAnnotationInterval: string
+    editingMinimumTrainingAssets: boolean
+    editingAutomaticAnnotationInterval: boolean
+}
+
 export enum AuxModalType {
     TEMPLATE_CREATION
 }
@@ -39,6 +46,12 @@ export class ExtendedApp extends App {
         super(opts)
         this.set('activeAuxModalType', undefined)
         this.set('activeAuxModalState', undefined)
+        this.set('automaticAnnotationToolboxState', {
+            minimumTrainingAssets: this.minimumTrainingAssets,
+            automaticAnnotationInterval: this.automaticAnnotationInterval,
+            editingMinimumTrainingAssets: false,
+            editingAutomaticAnnotationInterval: false
+        })
 
         // New collection? Need to reload the training asset queue
         this.listenTo(this, 'change:activeCollection', this._refreshTrainingAssets)
@@ -89,11 +102,17 @@ export class ExtendedApp extends App {
         }
     }
 
+    get automaticAnnotationToolboxState(): AutomaticAnnotationToolboxState {
+        return this.get('automaticAnnotationToolboxState')
+    }
+
     _refreshTrainingAssets(): void {
         if (this.backend instanceof FSMenpoBackend) {
             (<FSMenpoBackend>this.backend).refreshTrainingAssets(this.activeTemplate)
         }
     }
+
+    // Template creation modal
 
     openTemplateCreationModal(): void {
         this.activeAuxModalState = {
@@ -357,6 +376,86 @@ export class ExtendedApp extends App {
         if (this.onModalClose) {
             this.onModalClose()
         }
+    }
+
+    // Automatic annotation toolbox
+
+    setMinimumTrainingAssetsField(value: string): void {
+        this.automaticAnnotationToolboxState.minimumTrainingAssets = value
+        // re-render
+        this.trigger('change:automaticAnnotationToolboxState')
+    }
+
+    setAutomaticAnnotationIntervalField(value: string): void {
+        this.automaticAnnotationToolboxState.automaticAnnotationInterval = value
+        // re-render
+        this.trigger('change:automaticAnnotationToolboxState')
+    }
+
+    updateMinimumTrainingAssets(revert: boolean): void {
+        if (revert) {
+            this.automaticAnnotationToolboxState.minimumTrainingAssets = `${this.minimumTrainingAssets}`
+            this.trigger('change:automaticAnnotationToolboxState')
+            return
+        }
+        const mta = parseInt(this.automaticAnnotationToolboxState.minimumTrainingAssets)
+        if (isNaN(mta)) {
+            this.automaticAnnotationToolboxState.minimumTrainingAssets = `${this.minimumTrainingAssets}`
+            notify({
+                type: 'error',
+                persist: false,
+                msg: 'Enter a valid Number'
+            })
+        } else if (mta < 1) {
+            this.automaticAnnotationToolboxState.minimumTrainingAssets = `${this.minimumTrainingAssets}`
+            notify({
+                type: 'error',
+                persist: false,
+                msg: mta + ' is less than 1 (out of bounds)'
+            })
+        } else {
+            this.minimumTrainingAssets = mta
+            this.automaticAnnotationToolboxState.minimumTrainingAssets = `${mta}`
+        }
+        this.trigger('change:automaticAnnotationToolboxState')
+    }
+
+    updateAutomaticAnnotationInterval(revert: boolean): void {
+        if (revert) {
+            this.automaticAnnotationToolboxState.automaticAnnotationInterval = `${this.automaticAnnotationInterval}`
+            this.trigger('change:automaticAnnotationToolboxState')
+            return
+        }
+        const aai = parseInt(this.automaticAnnotationToolboxState.automaticAnnotationInterval)
+        if (isNaN(aai)) {
+            this.automaticAnnotationToolboxState.automaticAnnotationInterval = `${this.automaticAnnotationInterval}`
+            notify({
+                type: 'error',
+                persist: false,
+                msg: 'Enter a valid Number'
+            })
+        } else if (aai < 1) {
+            this.automaticAnnotationToolboxState.automaticAnnotationInterval = `${this.automaticAnnotationInterval}`
+            notify({
+                type: 'error',
+                persist: false,
+                msg: aai + ' is less than 1 (out of bounds)'
+            })
+        } else {
+            this.automaticAnnotationInterval = aai
+            this.automaticAnnotationToolboxState.automaticAnnotationInterval = `${aai}`
+        }
+        this.trigger('change:automaticAnnotationToolboxState')
+    }
+
+    toggleEditingMinimumTrainingAssets(): void {
+        this.automaticAnnotationToolboxState.editingMinimumTrainingAssets = !this.automaticAnnotationToolboxState.editingMinimumTrainingAssets
+        this.trigger('change:automaticAnnotationToolboxState')
+    }
+
+    toggleEditingAutomaticAnnotationInterval(): void {
+        this.automaticAnnotationToolboxState.editingAutomaticAnnotationInterval = !this.automaticAnnotationToolboxState.editingAutomaticAnnotationInterval
+        this.trigger('change:automaticAnnotationToolboxState')
     }
 
 }
