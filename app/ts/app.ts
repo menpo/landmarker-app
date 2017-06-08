@@ -406,12 +406,12 @@ export class ExtendedApp extends App {
                 persist: false,
                 msg: 'Enter a valid Number'
             })
-        } else if (mta < 1) {
+        } else if (mta < 2) {
             this.automaticAnnotationToolboxState.minimumTrainingAssets = `${this.minimumTrainingAssets}`
             notify({
                 type: 'error',
                 persist: false,
-                msg: mta + ' is less than 1 (out of bounds)'
+                msg: mta + ' is less than 2 (out of bounds)'
             })
         } else {
             this.minimumTrainingAssets = mta
@@ -434,12 +434,12 @@ export class ExtendedApp extends App {
                 persist: false,
                 msg: 'Enter a valid Number'
             })
-        } else if (aai < 1) {
+        } else if (aai < 2) {
             this.automaticAnnotationToolboxState.automaticAnnotationInterval = `${this.automaticAnnotationInterval}`
             notify({
                 type: 'error',
                 persist: false,
-                msg: aai + ' is less than 1 (out of bounds)'
+                msg: aai + ' is less than 2 (out of bounds)'
             })
         } else {
             this.automaticAnnotationInterval = aai

@@ -1,4 +1,4 @@
-import {  ipcRenderer } from 'electron'
+import { app, ipcRenderer } from 'electron'
 import * as fs from 'fs'
 import * as Path from 'path'
 
@@ -11,6 +11,8 @@ import {
 import { Backend } from '../../landmarker.io/src/ts/app/backend/base'
 import Template from '../../landmarker.io/src/ts/app/template'
 import { notify, loading } from '../../landmarker.io/src/ts/app/view/notification'
+import XMLHttpRequestPromise from '../../landmarker.io/src/ts/app/lib/requests'
+import { LJSONFile } from '../../landmarker.io/src/ts/app/model/landmark/group'
 
 import OBJLoader from '../../landmarker.io/src/ts/app/lib/obj_loader'
 import STLLoader from '../../landmarker.io/src/ts/app/lib/stl_loader'
@@ -63,6 +65,20 @@ function commonPrefix (path1, path2) {
     return arr1.slice(0, i).join(Path.sep)
 }
 
+function commonPrefixFromArray (paths: string[]) {
+    // Must not be empty
+    let prefix = paths[0]
+
+    let i = 0
+    for (i = 1; i < paths.length; i++) {
+        prefix = commonPrefix(prefix, paths[i])
+        if (prefix === '') {
+            break
+        }
+    }
+    return prefix
+}
+
 function checkCompleteAnnotation(ljson): boolean {
     for (let i = 0; i < ljson.landmarks.points.length; i++) {
         if (ljson.landmarks.points[i][0] === null) {
@@ -71,6 +87,17 @@ function checkCompleteAnnotation(ljson): boolean {
         }
     }
     return true
+}
+
+function postJSON (url: string, {headers={}, data={}, auth=false}={}) {
+    return XMLHttpRequestPromise(url, {
+        headers,
+        auth,
+        responseType: 'json',
+        method: 'POST',
+        data: JSON.stringify(data),
+        contentType: 'application/json;charset=UTF-8'
+    })
 }
 
 const DROP_TYPE = {
@@ -95,8 +122,16 @@ export default class FSMenpoBackend implements Backend {
     _cfg
     _pickTemplateCallback: {success, error} | undefined
 
+    url: string = 'http://localhost:5001/'
+    tempLJSONPath: string = Path.join(app.getPath('userData'), 'templjson.ljson')
+
+    // All fully annotated assets
     _trainingAssets: string[] = []
+    // Assets that have not been used to increment the deformable model yet
+    _toBeTrained: string[] = []
+    // The number of full annotations to activate automatic annotation
     minimumTrainingAssets: number = 10
+    // Number of full annotations between each model incrementation
     automaticAnnotationInterval: number = 5
 
     constructor(cfg) {
@@ -110,18 +145,8 @@ export default class FSMenpoBackend implements Backend {
     }
 
     computeCollection() {
-        let prefix = this._assets[0]
-
-        let i = 0
-        for (i = 1; i < this._assets.length; i++) {
-            prefix = commonPrefix(prefix, this._assets[i])
-            if (prefix === '') {
-                break
-            }
-        }
-
-        this._prefix = prefix
-        this._collection = `${prefix} - (${this._assets.length} assets)`
+        this._prefix = commonPrefixFromArray(this._assets)
+        this._collection = `${this._prefix} - (${this._assets.length} assets)`
         bus.emit(EVENTS.FS_CHANGED_ASSETS)
 
         this._cfg.set({
@@ -313,6 +338,7 @@ export default class FSMenpoBackend implements Backend {
     }
 
     fetchMode() {
+        // TODO: check python backend
         return Promise.resolve(this.mode)
     }
 
@@ -418,6 +444,7 @@ export default class FSMenpoBackend implements Backend {
                 if (err) {
                     console.log(err)
                     loading.stop(async)
+                    // TODO remove lol
                     if (this._trainingAssets.length >= this.minimumTrainingAssets) {
                         // TODO resolve with generated landmarks
                     }
@@ -441,11 +468,23 @@ export default class FSMenpoBackend implements Backend {
         const async = loading.start()
         if (checkCompleteAnnotation(json)) {
             this._trainingAssets.push(id)
-        }
-        if (this._deformableModelRefreshDue()) {
-            this._refreshDeformableModel()
+            this._toBeTrained.push(id)
         }
         return new Promise((resolve, reject) => {
+            if (this._deformableModelRefreshDue()) {
+                this._refreshDeformableModel(type).then(() => {
+                    fs.writeFile(fpath, JSON.stringify(json), 'utf8', (err) => {
+                        if (err) {
+                            loading.stop(async)
+                            reject(err)
+                        } else {
+                            loading.stop(async)
+                            resolve()
+                        }
+                    })
+                })
+                return
+            }
             fs.writeFile(fpath, JSON.stringify(json), 'utf8', (err) => {
                 if (err) {
                     loading.stop(async)
@@ -515,7 +554,58 @@ export default class FSMenpoBackend implements Backend {
     }
 
     refreshTrainingAssets(type: string): void {
+        // Initial array of training assets
         this._fetchFullyAnnotatedAssets(type).then((assetIds) => this._trainingAssets = assetIds)
+    }
+
+    fetchMeanShape(): Promise<any> {
+        // TODO: deal with waiting time
+        const async = loading.start()
+        return new Promise<any>((resolve) => {
+            postJSON(this.url + 'get_mean_shape', {data: {
+                fpath: commonPrefixFromArray(this._assets)
+            }}).then((json: any) => {
+                json.version = 2
+                loading.stop(async)
+                resolve(json)
+            })
+        })
+    }
+
+    fetchFittedShape(ljsonFile: LJSONFile, imgPath: string, type: string): Promise<any> {
+        // TODO: deal with waiting time
+        const async = loading.start()
+        return new Promise<any>((resolve, reject) => {
+            this._saveTemporaryLJSON(ljsonFile).then(() => {
+                // success
+                postJSON(this.url + 'get_fit', {data: {
+                    fpath: commonPrefixFromArray(this._assets),
+                    path: imgPath,
+                    ljsonpath: this.tempLJSONPath,
+                    group: type
+                }}).then((json: any) => {
+                    json.version = 2
+                    loading.stop(async)
+                    resolve(json)
+                })
+            }, (err) => {
+                // failure
+                reject(err)
+            })
+            
+        })
+    }
+
+    _saveTemporaryLJSON(ljsonFile: LJSONFile): Promise<{}> {
+        return new Promise<{}>((resolve, reject) => {
+            fs.writeFile(this.tempLJSONPath, JSON.stringify(ljsonFile), 'utf8', (err) => {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve()
+                }
+            })
+        })
     }
 
     _fetchFullyAnnotatedAssets(type: string): Promise<string[]> {
@@ -555,8 +645,18 @@ export default class FSMenpoBackend implements Backend {
         return (this._trainingAssets.length - this.minimumTrainingAssets) % this.automaticAnnotationInterval === 0
     }
 
-    _refreshDeformableModel(): void {
-        // TODO
+    _refreshDeformableModel(type: string): Promise<{}> {
+        // TODO: deal with waiting time
+        return new Promise<{}>((resolve) => {
+            postJSON(this.url + 'build_aam', {data: {
+                fpath: commonPrefixFromArray(this._assets),
+                paths: this._toBeTrained,
+                group: type
+            }}).then(() => {
+                this._toBeTrained = []
+                resolve()
+            })
+        })
     }
 
 }

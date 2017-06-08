@@ -54,7 +54,7 @@ export function AutomaticAnnotationToolbox(props: AutomaticAnnotationToolboxProp
                 { props.editingMinimumTrainingAssets ?
                 <input type="text" value={props.minimumTrainingAssets} onChange={(event) => props.setMinimumTrainingAssetsField(event.target.value)}
                 onKeyDown={(event) => handleKeyDown(event, AAField.MINIMUM, props)}/>
-                : <div onClick={() => props.toggleEditingMinimumTrainingAssets()}>{props.minimumTrainingAssets}</div> }
+                : <div className="AAToolbox-Field" onClick={() => props.toggleEditingMinimumTrainingAssets()}>{props.minimumTrainingAssets}</div> }
             </div>
         </div>
         <div className="AAToolbox-Row">
@@ -65,7 +65,7 @@ export function AutomaticAnnotationToolbox(props: AutomaticAnnotationToolboxProp
                 { props.editingAutomaticAnnotationInterval ?
                 <input type="text" value={props.automaticAnnotationInterval} onChange={(event) => props.setAutomaticAnnotationIntervalField(event.target.value)}
                 onKeyDown={(event) => handleKeyDown(event, AAField.INTERVAL, props)}/>
-                : <div onClick={() => props.toggleEditingAutomaticAnnotationInterval()}>{props.automaticAnnotationInterval}</div> }
+                : <div className="AAToolbox-Field" onClick={() => props.toggleEditingAutomaticAnnotationInterval()}>{props.automaticAnnotationInterval}</div> }
             </div>
         </div>
     </div>

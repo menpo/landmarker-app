@@ -60,7 +60,6 @@ def build_aam():
     json_in = request.get_json()
     training_images = load_images(json_in['paths'], json_in['group'])
     model_path = model_path_from_model_folder(json_in['fpath'])
-    print(model_path)
     if os.path.isfile(model_path):
         aam = loadAAM(model_path)
         aam.increment(training_images)
