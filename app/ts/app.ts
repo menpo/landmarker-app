@@ -1,6 +1,8 @@
 import { App, AppOptions } from '../../landmarker.io/src/ts/app/model/app'
 import { notify } from '../../landmarker.io/src/ts/app/view/notification'
 import FSMenpoBackend from './fs_menpo_backend'
+import { LJSONFile, LandmarkGroup } from '../../landmarker.io/src/ts/app/model/landmark/group'
+import { JSONLmPoint } from '../../landmarker.io/src/ts/app/model/landmark/landmark'
 import { ipcRenderer } from 'electron'
 
 interface YamlGroup {
@@ -39,6 +41,21 @@ export interface TemplateCreationModalState {
 }
 
 type AuxModalState = TemplateCreationModalState
+
+// Returns array of landmarks indices which were filled in
+function _fillInLJSONFile(primaryLJSON: LJSONFile, secondaryLJSON: LJSONFile): number[] {
+    // Assumes dimension of 2
+    const result: number[] = []
+    for (let i = 0; i < primaryLJSON.landmarks.points.length; i++) {
+        let primaryPoint: JSONLmPoint = primaryLJSON.landmarks.points[i]
+        if (primaryPoint[0] === null) {
+            result.push(i)
+            primaryPoint[0] = secondaryLJSON.landmarks.points[i][0]
+            primaryPoint[1] = secondaryLJSON.landmarks.points[i][1]
+        }
+    }
+    return result
+}
 
 export class ExtendedApp extends App {
 
@@ -456,6 +473,37 @@ export class ExtendedApp extends App {
     toggleEditingAutomaticAnnotationInterval(): void {
         this.automaticAnnotationToolboxState.editingAutomaticAnnotationInterval = !this.automaticAnnotationToolboxState.editingAutomaticAnnotationInterval
         this.trigger('change:automaticAnnotationToolboxState')
+    }
+
+    placeMeanShape(): void {
+        (<FSMenpoBackend>this.backend).fetchMeanShape().then((ljsonFile: LJSONFile) => {
+            // TODO: resize mean shape
+            const lms: LandmarkGroup = this.landmarks
+            const lmsLJSON: LJSONFile = this.landmarks.toJSON()
+            lms.tracker.recordState(lms.toJSON())
+            const filledInLms: number[] = _fillInLJSONFile(lmsLJSON, ljsonFile)
+            lms.restore(lmsLJSON)
+            lms.tracker.recordState(lmsLJSON, false, true)
+            for (let i = 0; i < filledInLms.length; i++) {
+                let lmIndex: number = filledInLms[i]
+                lms.landmarks[lmIndex].select()
+            }
+        })
+    }
+
+    placeFittedShape(): void {
+        (<FSMenpoBackend>this.backend).fetchFittedShape(this.landmarks.toJSON(), this.asset.id, this.activeTemplate).then((ljsonFile: LJSONFile) => {
+            let lms: LandmarkGroup = this.landmarks
+            lms.tracker.recordState(lms.toJSON())
+            lms.restore(ljsonFile)
+            lms.tracker.recordState(lms.toJSON(), false, true)
+        }, (err: string) => {
+            notify({
+                type: 'error',
+                persist: false,
+                msg: 'Refine failed due to failure to save temporary LJSON file: ' + err
+            })
+        })
     }
 
 }

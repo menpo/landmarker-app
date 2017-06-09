@@ -34,7 +34,7 @@ def load_images(image_paths, group_name):
 
 
 def model_path_from_model_folder(path):
-    return '{}{}'.format(path, 'aam.pkl')
+    return '{}'.format(os.path.join(path, 'aam.pkl'))
 
 
 def loadAAM(model_path):

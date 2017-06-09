@@ -13,9 +13,11 @@ export class ExtendedReactBridge extends ReactBridge {
 
         app.on('change:activeAuxModalType', () => this.onActiveAuxModalChange())
         app.on('change:automaticAnnotationToolboxState', () => this.onToolboxStateChange())
+        app.on('change:landmarks', () => this.onLandmarksChangeAux())
 
         this.onActiveAuxModalChange()
         this.onToolboxStateChange()
+        this.onLandmarksChangeAux()
     }
 
     onActiveAuxModalChange(): void {
@@ -27,6 +29,16 @@ export class ExtendedReactBridge extends ReactBridge {
     }
 
     onToolboxStateChange(): void {
+        this.renderAutomaticAnnotationToolbox()
+    }
+
+    onLandmarksChangeAux(): void {
+        if (!this.app.landmarks) {
+            return
+        }
+        this.app.landmarks.landmarks.forEach(lm => {
+            lm.on('change', () => this.renderAutomaticAnnotationToolbox())
+        })
         this.renderAutomaticAnnotationToolbox()
     }
 
@@ -88,20 +100,32 @@ export class ExtendedReactBridge extends ReactBridge {
         ReactDom.render(templateCreationModal, el)
     }
 
+    landmarksComplete(): boolean {
+        if (!this.app.landmarks) {
+            return false
+        }
+        return !this.app.landmarks.hasEmpty()
+    }
+
     renderAutomaticAnnotationToolbox(): void {
         let app: ExtendedApp = <ExtendedApp>this.app
+        let landmarksComplete: boolean = this.landmarksComplete()
         let toolboxState: AutomaticAnnotationToolboxState = <AutomaticAnnotationToolboxState>app.automaticAnnotationToolboxState
         let toolboxProps: AutomaticAnnotationToolboxProps = {
             minimumTrainingAssets: toolboxState.minimumTrainingAssets,
             automaticAnnotationInterval: toolboxState.automaticAnnotationInterval,
             editingMinimumTrainingAssets: toolboxState.editingMinimumTrainingAssets,
             editingAutomaticAnnotationInterval: toolboxState.editingAutomaticAnnotationInterval,
+            initialiseEnabled: !landmarksComplete,
+            refineEnabled: landmarksComplete,
             setMinimumTrainingAssetsField: app.setMinimumTrainingAssetsField.bind(app),
             setAutomaticAnnotationIntervalField: app.setAutomaticAnnotationIntervalField.bind(app),
             updateMinimumTrainingAssets: app.updateMinimumTrainingAssets.bind(app),
             updateAutomaticAnnotationInterval: app.updateAutomaticAnnotationInterval.bind(app),
             toggleEditingMinimumTrainingAssets: app.toggleEditingMinimumTrainingAssets.bind(app),
-            toggleEditingAutomaticAnnotationInterval: app.toggleEditingAutomaticAnnotationInterval.bind(app)
+            toggleEditingAutomaticAnnotationInterval: app.toggleEditingAutomaticAnnotationInterval.bind(app),
+            initialise: app.placeMeanShape.bind(app),
+            refine: app.placeFittedShape.bind(app)
         }
         const automaticAnnotationToolbox = AutomaticAnnotationToolbox(toolboxProps)
         const el = document.getElementById('automaticAnnotationToolbox')

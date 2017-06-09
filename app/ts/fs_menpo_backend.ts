@@ -1,6 +1,7 @@
-import { app, ipcRenderer } from 'electron'
+import { ipcRenderer } from 'electron'
 import * as fs from 'fs'
 import * as Path from 'path'
+import * as os from 'os'
 
 import * as THREE from 'three'
 
@@ -123,7 +124,7 @@ export default class FSMenpoBackend implements Backend {
     _pickTemplateCallback: {success, error} | undefined
 
     url: string = 'http://localhost:5001/'
-    tempLJSONPath: string = Path.join(app.getPath('userData'), 'templjson.ljson')
+    tempLJSONPath: string = Path.join(os.tmpdir(), 'templjson.ljson')
 
     // All fully annotated assets
     _trainingAssets: string[] = []
@@ -558,10 +559,10 @@ export default class FSMenpoBackend implements Backend {
         this._fetchFullyAnnotatedAssets(type).then((assetIds) => this._trainingAssets = assetIds)
     }
 
-    fetchMeanShape(): Promise<any> {
+    fetchMeanShape(): Promise<LJSONFile> {
         // TODO: deal with waiting time
         const async = loading.start()
-        return new Promise<any>((resolve) => {
+        return new Promise<LJSONFile>((resolve) => {
             postJSON(this.url + 'get_mean_shape', {data: {
                 fpath: commonPrefixFromArray(this._assets)
             }}).then((json: any) => {
@@ -572,10 +573,11 @@ export default class FSMenpoBackend implements Backend {
         })
     }
 
-    fetchFittedShape(ljsonFile: LJSONFile, imgPath: string, type: string): Promise<any> {
+    fetchFittedShape(ljsonFile: LJSONFile, imgId: string, type: string): Promise<LJSONFile> {
         // TODO: deal with waiting time
+        const imgPath = this.pathFromId(imgId)
         const async = loading.start()
-        return new Promise<any>((resolve, reject) => {
+        return new Promise<LJSONFile>((resolve, reject) => {
             this._saveTemporaryLJSON(ljsonFile).then(() => {
                 // success
                 postJSON(this.url + 'get_fit', {data: {
