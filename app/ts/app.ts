@@ -476,7 +476,7 @@ export class ExtendedApp extends App {
     }
 
     placeMeanShape(): void {
-        (<FSMenpoBackend>this.backend).fetchMeanShape().then((ljsonFile: LJSONFile) => {
+        (<FSMenpoBackend>this.backend).fetchMeanShape(this.activeTemplate).then((ljsonFile: LJSONFile) => {
             // TODO: resize mean shape
             const lms: LandmarkGroup = this.landmarks
             const lmsLJSON: LJSONFile = this.landmarks.toJSON()
@@ -488,7 +488,17 @@ export class ExtendedApp extends App {
                 let lmIndex: number = filledInLms[i]
                 lms.landmarks[lmIndex].select()
             }
+        }, (err: any) => {
+            // account for abort
+            if (err.message && err.message === 'Aborted') {
+                notify({type: 'success', msg: 'Deformable model refresh aborted sucessfully'})
+            } else {
+                notify({type: 'error', msg: (err.message || err)})
+            }
+            this.trigger('change:automaticAnnotationToolboxState')
         })
+        // Re-render to show cancel button
+        this.trigger('change:automaticAnnotationToolboxState')
     }
 
     placeFittedShape(): void {
@@ -497,13 +507,21 @@ export class ExtendedApp extends App {
             lms.tracker.recordState(lms.toJSON())
             lms.restore(ljsonFile)
             lms.tracker.recordState(lms.toJSON(), false, true)
-        }, (err: string) => {
-            notify({
-                type: 'error',
-                persist: false,
-                msg: 'Refine failed due to failure to save temporary LJSON file: ' + err
-            })
+        }, (err: any) => {
+            // account for abort
+            if (err.message && err.message === 'Aborted') {
+                notify({type: 'success', msg: 'Deformable model refresh aborted sucessfully'})
+            } else {
+                notify({type: 'error', msg: (err.message || err)})
+            }
+            this.trigger('change:automaticAnnotationToolboxState')
         })
+        // Re-render to show cancel button
+        this.trigger('change:automaticAnnotationToolboxState')
+    }
+
+    cancelMenpoCall(): void {
+        (<FSMenpoBackend>this.backend).cancelMenpoCall()
     }
 
 }

@@ -1,6 +1,7 @@
 import * as ReactDom from 'react-dom'
 import { ReactBridge } from '../../landmarker.io/src/ts/app/view/reactbridge'
 import { ExtendedApp, AutomaticAnnotationToolboxState, AuxModalType, TemplateCreationModalState, TemplateGroupState, TemplateLandmarkConnectionState } from './app'
+import FSMenpoBackend from './fs_menpo_backend'
 import { TemplateCreationModal, TemplateCreationModalProps } from './view/TemplateCreationModal'
 import { TemplateGroupProps } from './view/TemplateCreationGroup'
 import { TemplateConnectionProps } from './view/TemplateCreationLandmarkConnection'
@@ -39,6 +40,7 @@ export class ExtendedReactBridge extends ReactBridge {
         this.app.landmarks.landmarks.forEach(lm => {
             lm.on('change', () => this.renderAutomaticAnnotationToolbox())
         })
+        this.app.landmarks.tracker.on('change', () => this.renderAutomaticAnnotationToolbox())
         this.renderAutomaticAnnotationToolbox()
     }
 
@@ -109,6 +111,7 @@ export class ExtendedReactBridge extends ReactBridge {
 
     renderAutomaticAnnotationToolbox(): void {
         let app: ExtendedApp = <ExtendedApp>this.app
+        let backend: FSMenpoBackend = <FSMenpoBackend>app.backend
         let landmarksComplete: boolean = this.landmarksComplete()
         let toolboxState: AutomaticAnnotationToolboxState = <AutomaticAnnotationToolboxState>app.automaticAnnotationToolboxState
         let toolboxProps: AutomaticAnnotationToolboxProps = {
@@ -116,8 +119,10 @@ export class ExtendedReactBridge extends ReactBridge {
             automaticAnnotationInterval: toolboxState.automaticAnnotationInterval,
             editingMinimumTrainingAssets: toolboxState.editingMinimumTrainingAssets,
             editingAutomaticAnnotationInterval: toolboxState.editingAutomaticAnnotationInterval,
-            initialiseEnabled: !landmarksComplete,
-            refineEnabled: landmarksComplete,
+            initialiseEnabled: !landmarksComplete && backend.automaticAnnotationOn(),
+            refineEnabled: landmarksComplete && backend.automaticAnnotationOn(),
+            menpoCallActive: backend.callingMenpo,
+            menpoCallMessage: backend.menpoCallMessage,
             setMinimumTrainingAssetsField: app.setMinimumTrainingAssetsField.bind(app),
             setAutomaticAnnotationIntervalField: app.setAutomaticAnnotationIntervalField.bind(app),
             updateMinimumTrainingAssets: app.updateMinimumTrainingAssets.bind(app),
@@ -125,7 +130,8 @@ export class ExtendedReactBridge extends ReactBridge {
             toggleEditingMinimumTrainingAssets: app.toggleEditingMinimumTrainingAssets.bind(app),
             toggleEditingAutomaticAnnotationInterval: app.toggleEditingAutomaticAnnotationInterval.bind(app),
             initialise: app.placeMeanShape.bind(app),
-            refine: app.placeFittedShape.bind(app)
+            refine: app.placeFittedShape.bind(app),
+            cancelMenpoCall: app.cancelMenpoCall.bind(app)
         }
         const automaticAnnotationToolbox = AutomaticAnnotationToolbox(toolboxProps)
         const el = document.getElementById('automaticAnnotationToolbox')

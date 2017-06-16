@@ -38,6 +38,8 @@ export interface AutomaticAnnotationToolboxProps {
     editingAutomaticAnnotationInterval: boolean
     initialiseEnabled: boolean
     refineEnabled: boolean
+    menpoCallActive: boolean
+    menpoCallMessage: string
     setMinimumTrainingAssetsField: (value: string) => void
     setAutomaticAnnotationIntervalField: (value: string) => void
     updateMinimumTrainingAssets: (revert: boolean) => void
@@ -46,11 +48,29 @@ export interface AutomaticAnnotationToolboxProps {
     toggleEditingAutomaticAnnotationInterval: () => void
     initialise: () => void
     refine: () => void
+    cancelMenpoCall: () => void
 }
 
 export function AutomaticAnnotationToolbox(props: AutomaticAnnotationToolboxProps) {
     return (
     <div>
+        { props.menpoCallActive ?
+        <div>
+            {/*<div className="AAToolbox-Row">
+                <div className="AAToolbox-Row-Item CancelButtonRow">
+                    {props.menpoCallMessage}
+                </div>
+            </div>*/}
+            <div className="AAToolbox-Row MenpoMessage">
+                {props.menpoCallMessage}
+            </div>
+            <div className="AAToolbox-Row">
+                <div className="AAToolbox-Row-Item CancelButtonRow">
+                    <Button label="Cancel" enabled={true} onClick={props.cancelMenpoCall}/>
+                </div>
+            </div>
+        </div>
+        : null}
         <div className="AAToolbox-Row">
             <div className="AAToolbox-Row-Item">
                 <Button label="Initialise" enabled={props.initialiseEnabled} onClick={props.initialise}/>

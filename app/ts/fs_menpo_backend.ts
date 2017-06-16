@@ -90,7 +90,7 @@ function checkCompleteAnnotation(ljson): boolean {
     return true
 }
 
-function postJSON (url: string, {headers={}, data={}, auth=false}={}) {
+function postJSON(url: string, {headers={}, data={}, auth=false}={}): any {
     return XMLHttpRequestPromise(url, {
         headers,
         auth,
@@ -98,6 +98,18 @@ function postJSON (url: string, {headers={}, data={}, auth=false}={}) {
         method: 'POST',
         data: JSON.stringify(data),
         contentType: 'application/json;charset=UTF-8'
+    })
+}
+
+function writeFile(fpath: string, json: any, resolve, reject, async): void {
+    fs.writeFile(fpath, JSON.stringify(json), 'utf8', (err) => {
+        if (err) {
+            loading.stop(async)
+            reject(err)
+        } else {
+            loading.stop(async)
+            resolve()
+        }
     })
 }
 
@@ -134,6 +146,9 @@ export default class FSMenpoBackend implements Backend {
     minimumTrainingAssets: number = 10
     // Number of full annotations between each model incrementation
     automaticAnnotationInterval: number = 5
+    callingMenpo: boolean = false
+    menpoCallMessage: string = ''
+    menpoXhr?: XMLHttpRequest
 
     constructor(cfg) {
         this._cfg = cfg
@@ -445,10 +460,6 @@ export default class FSMenpoBackend implements Backend {
                 if (err) {
                     console.log(err)
                     loading.stop(async)
-                    // TODO remove lol
-                    if (this._trainingAssets.length >= this.minimumTrainingAssets) {
-                        // TODO resolve with generated landmarks
-                    }
                     resolve(tmpl.emptyLJSON(dims))
                 } else {
                     const [ok, json] = tmpl.validate(data.toString(), dims)
@@ -467,22 +478,33 @@ export default class FSMenpoBackend implements Backend {
     saveLandmarkGroup(id, type, json) {
         const fpath = `${this.pathFromId(id)}_${type}.ljson`
         const async = loading.start()
-        if (checkCompleteAnnotation(json)) {
+        const annotationComplete: boolean = checkCompleteAnnotation(json)
+        if (annotationComplete) {
             this._trainingAssets.push(id)
             this._toBeTrained.push(id)
         }
         return new Promise((resolve, reject) => {
-            if (this._deformableModelRefreshDue()) {
-                this._refreshDeformableModel(type).then(() => {
-                    fs.writeFile(fpath, JSON.stringify(json), 'utf8', (err) => {
-                        if (err) {
-                            loading.stop(async)
-                            reject(err)
-                        } else {
+            if (this._deformableModelRefreshDue() && annotationComplete) {
+                fs.writeFile(fpath, JSON.stringify(json), 'utf8', (err) => {
+                    if (err) {
+                        loading.stop(async)
+                        reject(err)
+                    } else {
+                        this._refreshDeformableModel(type).then(() => {
                             loading.stop(async)
                             resolve()
-                        }
-                    })
+                        }, (err: any) => {
+                            // account for abort
+                            if (!err.message || err.message !== 'Aborted') {
+                                notify({type: 'error', msg: (err.message || err)})
+                            }
+                            if (err.message === 'Aborted') {
+                                notify({type: 'success', msg: 'Deformable model refresh aborted sucessfully'})
+                            }
+                            loading.stop(async)
+                            resolve()
+                        })
+                    }
                 })
                 return
             }
@@ -559,53 +581,59 @@ export default class FSMenpoBackend implements Backend {
         this._fetchFullyAnnotatedAssets(type).then((assetIds) => this._trainingAssets = assetIds)
     }
 
-    fetchMeanShape(): Promise<LJSONFile> {
-        // TODO: deal with waiting time
+    fetchMeanShape(type: string): Promise<LJSONFile> {
         const async = loading.start()
-        return new Promise<LJSONFile>((resolve) => {
-            postJSON(this.url + 'get_mean_shape', {data: {
-                fpath: commonPrefixFromArray(this._assets)
-            }}).then((json: any) => {
+        if (this.callingMenpo) {
+            return new Promise<{}>((resolve, reject) => reject(new Error('Fetching mean shape failed - conflict with another Menpo call')))
+        }
+        const postPromise = postJSON(this.url + 'get_mean_shape', {data: {
+                                fpath: commonPrefixFromArray(this._assets),
+                                group: type
+                            }})
+        this.menpoXhr = postPromise.xhr()
+        this.menpoCallMessage = 'Fetching initial shape...'
+        this.callingMenpo = true
+        return new Promise<LJSONFile>((resolve, reject) => {
+            postPromise.then((json: any) => {
                 json.version = 2
                 loading.stop(async)
+                this._closeMenpoCall()
                 resolve(json)
+            }, (err: any) => {
+                // hopefully an abort
+                loading.stop(async)
+                this._closeMenpoCall()
+                reject(err)
             })
         })
     }
 
     fetchFittedShape(ljsonFile: LJSONFile, imgId: string, type: string): Promise<LJSONFile> {
-        // TODO: deal with waiting time
         const imgPath = this.pathFromId(imgId)
         const async = loading.start()
+        if (this.callingMenpo) {
+            return new Promise<{}>((resolve, reject) => reject(new Error('Fetching mean shape failed - conflict with another Menpo call')))
+        }
+        const postPromise = postJSON(this.url + 'get_fit', {data: {
+                                fpath: commonPrefixFromArray(this._assets),
+                                path: imgPath,
+                                ljson: JSON.stringify(ljsonFile),
+                                group: type
+                            }})
+        this.menpoXhr = postPromise.xhr()
+        this.menpoCallMessage = 'Fetching refined shape...'
+        this.callingMenpo = true
         return new Promise<LJSONFile>((resolve, reject) => {
-            this._saveTemporaryLJSON(ljsonFile).then(() => {
-                // success
-                postJSON(this.url + 'get_fit', {data: {
-                    fpath: commonPrefixFromArray(this._assets),
-                    path: imgPath,
-                    ljsonpath: this.tempLJSONPath,
-                    group: type
-                }}).then((json: any) => {
-                    json.version = 2
-                    loading.stop(async)
-                    resolve(json)
-                })
-            }, (err) => {
-                // failure
+            postPromise.then((json: any) => {
+                json.version = 2
+                loading.stop(async)
+                this._closeMenpoCall()
+                resolve(json)
+            }, (err: any) => {
+                // hopefully an abort
+                loading.stop(async)
+                this._closeMenpoCall()
                 reject(err)
-            })
-            
-        })
-    }
-
-    _saveTemporaryLJSON(ljsonFile: LJSONFile): Promise<{}> {
-        return new Promise<{}>((resolve, reject) => {
-            fs.writeFile(this.tempLJSONPath, JSON.stringify(ljsonFile), 'utf8', (err) => {
-                if (err) {
-                    reject(err)
-                } else {
-                    resolve()
-                }
             })
         })
     }
@@ -647,18 +675,47 @@ export default class FSMenpoBackend implements Backend {
         return (this._trainingAssets.length - this.minimumTrainingAssets) % this.automaticAnnotationInterval === 0
     }
 
+    automaticAnnotationOn(): boolean {
+        return this._trainingAssets.length >= this.minimumTrainingAssets
+    }
+
     _refreshDeformableModel(type: string): Promise<{}> {
-        // TODO: deal with waiting time
-        return new Promise<{}>((resolve) => {
-            postJSON(this.url + 'build_aam', {data: {
-                fpath: commonPrefixFromArray(this._assets),
-                paths: this._toBeTrained,
-                group: type
-            }}).then(() => {
+        if (this.callingMenpo) {
+            return new Promise<{}>((resolve, reject) => reject(new Error('Fetching mean shape failed - conflict with another Menpo call')))
+        }
+        const postPromise = postJSON(this.url + 'build_aam', {data: {
+                                fpath: commonPrefixFromArray(this._assets),
+                                paths: this._toBeTrained,
+                                group: type
+                            }})
+        this.menpoXhr = postPromise.xhr()
+        this.menpoCallMessage = 'Updating deformable model...'
+        this.callingMenpo = true
+        return new Promise<{}>((resolve, reject) => {
+            postPromise.then(() => {
                 this._toBeTrained = []
+                this._closeMenpoCall()
                 resolve()
+            }, (err: any) => {
+                // hopefully an abort
+                this._closeMenpoCall()
+                reject(err)
             })
         })
+    }
+
+    _closeMenpoCall(): void {
+        this.menpoCallMessage = ''
+        this.callingMenpo = false
+        this.menpoXhr = undefined
+    }
+
+    cancelMenpoCall(): void {
+        if (!this.menpoXhr || !this.callingMenpo) {
+            return
+        }
+        this.menpoXhr.abort()
+        // 'this.menpoXhr = undefined' is covered by 'then' clauses
     }
 
 }

@@ -18,7 +18,7 @@ const contents = `\
             Load images from your hard drive
         </div>\
         <div class='IntroItem IntroItem--fs2dss'>\
-            Load images from your hard drive (semi-supervised annotation)
+            Semi-supervised image annotation
         </div>\
         <div class='IntroItem IntroItem--Server'>\
             <span class="octicon octicon-globe"></span>\

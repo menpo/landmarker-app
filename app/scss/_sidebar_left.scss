@@ -25,6 +25,13 @@
     }
 }
 
+.AAToolbox-Row.MenpoMessage {
+    color: black;
+    background-color: white;
+    font-size: medium;
+    text-align: center;
+}
+
 .AAToolbox-Row-Item {
     flex: 1;
 
@@ -33,6 +40,12 @@
         font-weight: bold;
         font-size: medium;
         text-align: left;
+    }
+}
+
+.AAToolbox-Row-Item.CancelButtonRow {
+    button {
+        background-color: $colorRed;
     }
 }
 
