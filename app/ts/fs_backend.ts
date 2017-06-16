@@ -5,7 +5,7 @@ import * as Path from 'path'
 import * as THREE from 'three'
 
 import {
-    basename, extname, stripExtension
+    extname, stripExtension
 } from '../../landmarker.io/src/ts/app/lib/utils'
 
 import { Backend } from '../../landmarker.io/src/ts/app/backend/base'
@@ -47,6 +47,15 @@ function _anyPromise (array) {
         throw errors
     })
 
+}
+
+function basename(path: string, removeExt=false) {
+    const bn = path.split(Path.sep).pop()
+    return removeExt ? bn.split('.').slice(0, -1).join('.') : bn
+}
+
+function withoutExt(path: string): string {
+    return path.split('.').slice(0, -1).join('.')
 }
 
 function commonPrefix (path1, path2) {
@@ -394,7 +403,7 @@ export default class FSBackend implements Backend {
     }
 
     fetchLandmarkGroup(id, type) {
-        const fpath = `${this.pathFromId(id)}_${type}.ljson`
+        const fpath = `${withoutExt(this.pathFromId(id))}_${type}.ljson`
         const dims = this.mode === 'mesh' ? 3 : 2
         const tmpl = this._templates[type]
         const async = loading.start()
@@ -420,7 +429,7 @@ export default class FSBackend implements Backend {
     }
 
     saveLandmarkGroup(id, type, json) {
-        const fpath = `${this.pathFromId(id)}_${type}.ljson`
+        const fpath = `${withoutExt(this.pathFromId(id))}_${type}.ljson`
         const async = loading.start()
         return new Promise((resolve, reject) => {
             fs.writeFile(fpath, JSON.stringify(json), 'utf8', (err) => {

@@ -122,7 +122,7 @@ const emptyMenu = Menu.buildFromTemplate(emptyMenuTemplate)
 const mainMenu = Menu.buildFromTemplate(mainMenuTemplate)
 
 // Warning! This code is dependent on the exact position of this menu item!
-const checkForUpdatesMenuItem = mainMenu.items[2].submenu.items[2]
+const checkForUpdatesMenuItem = mainMenu.items[3].submenu.items[2]
 
 Menu.setApplicationMenu(emptyMenu)
 

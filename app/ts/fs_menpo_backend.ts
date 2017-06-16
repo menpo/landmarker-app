@@ -6,7 +6,7 @@ import * as os from 'os'
 import * as THREE from 'three'
 
 import {
-    basename, extname, stripExtension
+    extname, stripExtension
 } from '../../landmarker.io/src/ts/app/lib/utils'
 
 import { Backend } from '../../landmarker.io/src/ts/app/backend/base'
@@ -22,6 +22,8 @@ import bus, * as EVENTS from './bus'
 
 const IMAGE_EXTENSIONS = ['jpeg', 'jpg', 'png']
 const MESH_EXTENSIONS = ['obj', 'stl']
+
+// TODO the list of annotated assets that have incorporated into the model does not persist after restart!
 
 // promise-polyfill doesn't expose the 'any' function so this is a replacement
 // which resolves with the first resolving promise in the array or rejects
@@ -50,6 +52,15 @@ function _anyPromise (array) {
         throw errors
     })
 
+}
+
+function basename(path: string, removeExt=false) {
+    const bn = path.split(Path.sep).pop()
+    return removeExt ? bn.split('.').slice(0, -1).join('.') : bn
+}
+
+function withoutExt(path: string): string {
+    return path.split('.').slice(0, -1).join('.')
 }
 
 function commonPrefix (path1, path2) {
@@ -136,7 +147,6 @@ export default class FSMenpoBackend implements Backend {
     _pickTemplateCallback: {success, error} | undefined
 
     url: string = 'http://localhost:5001/'
-    tempLJSONPath: string = Path.join(os.tmpdir(), 'templjson.ljson')
 
     // All fully annotated assets
     _trainingAssets: string[] = []
@@ -450,7 +460,7 @@ export default class FSMenpoBackend implements Backend {
     }
 
     fetchLandmarkGroup(id, type) {
-        const fpath = `${this.pathFromId(id)}_${type}.ljson`
+        const fpath = `${withoutExt(this.pathFromId(id))}_${type}.ljson`
         const dims = this.mode === 'mesh' ? 3 : 2
         const tmpl = this._templates[type]
         const async = loading.start()
@@ -476,7 +486,7 @@ export default class FSMenpoBackend implements Backend {
     }
 
     saveLandmarkGroup(id, type, json) {
-        const fpath = `${this.pathFromId(id)}_${type}.ljson`
+        const fpath = `${withoutExt(this.pathFromId(id))}_${type}.ljson`
         const async = loading.start()
         const annotationComplete: boolean = checkCompleteAnnotation(json)
         if (annotationComplete) {
@@ -646,7 +656,7 @@ export default class FSMenpoBackend implements Backend {
                 let annotated: string[] = []
                 let promises: Promise<{}>[] = []
                 assetIds.forEach((assetId: string) => {
-                    const fpath = `${this.pathFromId(assetId)}_${type}.ljson`
+                    const fpath = `${withoutExt(this.pathFromId(assetId))}_${type}.ljson`
                     promises.push(new Promise((resolve) => {
                         fs.readFile(fpath, (err, data) => {
                             if (err) {
