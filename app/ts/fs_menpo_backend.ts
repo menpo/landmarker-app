@@ -1,7 +1,7 @@
 import { ipcRenderer } from 'electron'
 import * as fs from 'fs'
 import * as Path from 'path'
-import * as os from 'os'
+import * as _ from 'underscore'
 
 import * as THREE from 'three'
 
@@ -23,7 +23,10 @@ import bus, * as EVENTS from './bus'
 const IMAGE_EXTENSIONS = ['jpeg', 'jpg', 'png']
 const MESH_EXTENSIONS = ['obj', 'stl']
 
-// TODO the list of annotated assets that have incorporated into the model does not persist after restart!
+// TODO: the list of annotated assets that have incorporated into the model does not persist after restart!
+// TODO: deleting pickle files but leaving ljsons causes error!
+// TODO: revisiting annotated assets causes a phantom change that means it needs to be saved before scrolling! is this a new issue?
+// TODO: scrolling through assets that have already been done and saving them causes them to be resent to the python server!
 
 // promise-polyfill doesn't expose the 'any' function so this is a replacement
 // which resolves with the first resolving promise in the array or rejects
@@ -101,6 +104,19 @@ function checkCompleteAnnotation(ljson): boolean {
     return true
 }
 
+function softValidateAndCorrect(jsonFile: LJSONFile | string, template: Template, dims=2): [boolean, LJSONFile] {
+    const json: LJSONFile = typeof jsonFile === 'string' ? JSON.parse(jsonFile) : jsonFile
+
+    const ljson: LJSONFile = template.emptyLJSON(dims)
+    json.landmarks.connectivity = ljson.landmarks.connectivity
+    let ok: boolean
+
+    ok = json.version === ljson.version
+    ok = ok && _.isEqual(json.labels, ljson.labels)
+    ok = ok && ljson.landmarks.points.every(p => p.length === dims)
+    return [ok, ok ? json : ljson]
+}
+
 function postJSON(url: string, {headers={}, data={}, auth=false}={}): any {
     return XMLHttpRequestPromise(url, {
         headers,
@@ -109,18 +125,6 @@ function postJSON(url: string, {headers={}, data={}, auth=false}={}): any {
         method: 'POST',
         data: JSON.stringify(data),
         contentType: 'application/json;charset=UTF-8'
-    })
-}
-
-function writeFile(fpath: string, json: any, resolve, reject, async): void {
-    fs.writeFile(fpath, JSON.stringify(json), 'utf8', (err) => {
-        if (err) {
-            loading.stop(async)
-            reject(err)
-        } else {
-            loading.stop(async)
-            resolve()
-        }
     })
 }
 
@@ -593,6 +597,7 @@ export default class FSMenpoBackend implements Backend {
 
     fetchMeanShape(type: string): Promise<LJSONFile> {
         const async = loading.start()
+        const tmpl = this._templates[type]
         if (this.callingMenpo) {
             return new Promise<{}>((resolve, reject) => reject(new Error('Fetching mean shape failed - conflict with another Menpo call')))
         }
@@ -606,9 +611,16 @@ export default class FSMenpoBackend implements Backend {
         return new Promise<LJSONFile>((resolve, reject) => {
             postPromise.then((json: any) => {
                 json.version = 2
+                // Menpofit messes with the connectivity
+                const [ok, ljson] = softValidateAndCorrect(json, tmpl, 2)
+                if (!ok) {
+                    notify({
+                        msg: 'Found invalid landmarks, falling back to empty landmarks'
+                    })
+                }
                 loading.stop(async)
                 this._closeMenpoCall()
-                resolve(json)
+                resolve(ljson)
             }, (err: any) => {
                 // hopefully an abort
                 loading.stop(async)
@@ -620,6 +632,7 @@ export default class FSMenpoBackend implements Backend {
 
     fetchFittedShape(ljsonFile: LJSONFile, imgId: string, type: string): Promise<LJSONFile> {
         const imgPath = this.pathFromId(imgId)
+        const tmpl = this._templates[type]
         const async = loading.start()
         if (this.callingMenpo) {
             return new Promise<{}>((resolve, reject) => reject(new Error('Fetching mean shape failed - conflict with another Menpo call')))
@@ -636,9 +649,16 @@ export default class FSMenpoBackend implements Backend {
         return new Promise<LJSONFile>((resolve, reject) => {
             postPromise.then((json: any) => {
                 json.version = 2
+                // Menpofit messes with the connectivity
+                const [ok, ljson] = softValidateAndCorrect(json, tmpl, 2)
+                if (!ok) {
+                    notify({
+                        msg: 'Found invalid landmarks, falling back to empty landmarks'
+                    })
+                }
                 loading.stop(async)
                 this._closeMenpoCall()
-                resolve(json)
+                resolve(ljson)
             }, (err: any) => {
                 // hopefully an abort
                 loading.stop(async)
@@ -682,7 +702,7 @@ export default class FSMenpoBackend implements Backend {
     }
 
     _deformableModelRefreshDue(): boolean {
-        return (this._trainingAssets.length - this.minimumTrainingAssets) % this.automaticAnnotationInterval === 0
+        return this.automaticAnnotationOn() && (this._trainingAssets.length - this.minimumTrainingAssets) % this.automaticAnnotationInterval === 0
     }
 
     automaticAnnotationOn(): boolean {
@@ -695,7 +715,7 @@ export default class FSMenpoBackend implements Backend {
         }
         const postPromise = postJSON(this.url + 'build_aam', {data: {
                                 fpath: commonPrefixFromArray(this._assets),
-                                paths: this._toBeTrained,
+                                paths: this._toBeTrained.map((id: string) => {return this.pathFromId(id)}),
                                 group: type
                             }})
         this.menpoXhr = postPromise.xhr()

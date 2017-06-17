@@ -101,6 +101,7 @@ function bindIntro () {
     bus.on(EVENTS.START_WITH_SERVER, function (url) {
         server = new Server(url)
         server.fetchMode().then(function (mode) {
+            $('#automaticAnnotationToolbox').remove()
             $('#changeAssets').remove()
             init(server, mode)
         }, function (err) {
@@ -109,6 +110,7 @@ function bindIntro () {
     })
 
     bus.on(EVENTS.START_WITH_FS, function (mode) {
+        $('#automaticAnnotationToolbox').remove()
         server = new FSBackend(cfg)
         server.setMode(mode)
         server.selectAssets()

@@ -105,12 +105,11 @@ def get_fit():
     ljson_file.seek(0)
     shape = mio.import_landmark_file(ljson_file.name)
     ljson_file.close()
-    group_name = json_in['group']
     model_path = model_path_from_model_folder(model_folder, json_in['group'])
     aam = load_aam(model_path)
     fitter = LucasKanadeAAMFitter(aam, lk_algorithm_cls=WibergInverseCompositional,
                                   n_shape=[3, 20], n_appearance=[30, 150])
-    image = mio.import_image(image_path, landmark_resolver=partial(landmark_resolver, group_name))
+    image = mio.import_image(image_path, landmark_resolver=None)
     fr = fitter.fit_from_shape(image, shape)
     return json.dumps(fr.final_shape.tojson())
 

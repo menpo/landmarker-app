@@ -111,6 +111,9 @@ export class ExtendedReactBridge extends ReactBridge {
 
     renderAutomaticAnnotationToolbox(): void {
         let app: ExtendedApp = <ExtendedApp>this.app
+        if (!(app.backend instanceof FSMenpoBackend)) {
+            return
+        }
         let backend: FSMenpoBackend = <FSMenpoBackend>app.backend
         let landmarksComplete: boolean = this.landmarksComplete()
         let toolboxState: AutomaticAnnotationToolboxState = <AutomaticAnnotationToolboxState>app.automaticAnnotationToolboxState
