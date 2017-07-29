@@ -124,7 +124,7 @@ export class ExtendedApp extends App {
     }
 
     _refreshTrainingAssets(): void {
-        if (this.backend instanceof FSMenpoBackend) {
+        if (this.backend instanceof FSMenpoBackend && this.activeTemplate) {
             (<FSMenpoBackend>this.backend).refreshTrainingAssets(this.activeTemplate)
         }
     }

@@ -76,6 +76,26 @@ def build_aam():
 # fpath: string
 # group: string
 #
+# can be called without calling build_aam
+# returns json object with image paths as keys and completed annotations as values
+@app.route('/get_completed_annotations', methods=['POST'])
+def get_completed_annotations():
+    json_in = request.get_json()
+    model_path = model_path_from_model_folder(json_in['fpath'], json_in['group'])
+    if not os.path.isfile(model_path):
+        return '{}'
+    aam = load_aam(model_path)
+    shapes = aam.shape_models
+    completed_annotations = {}
+    for shape in shapes:
+        completed_annotations[shape.target.path.stem] = shape.target.tojson()
+    return json.dumps(completed_annotations)
+
+
+# json keys:
+# fpath: string
+# group: string
+#
 # must be called after build_aam
 # note: shape is not scaled
 # returns json object with 'points' keys

@@ -428,7 +428,7 @@ export default class FSBackend implements Backend {
         })
     }
 
-    saveLandmarkGroup(id, type, json) {
+    saveLandmarkGroup(id: string, type: string, json) {
         const fpath = `${withoutExt(this.pathFromId(id))}_${type}.ljson`
         const async = loading.start()
         return new Promise((resolve, reject) => {
