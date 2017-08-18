@@ -610,7 +610,6 @@ export default class FSMenpoBackend implements Backend {
     refreshTrainingAssets(type: string): void {
         // Initial array of training assets
         this._fetchAndSetFullyAnnotatedAssets(type).then(() => {}, (err) => {
-            // Catch the error. We expect these calls to step on each other at times.
             console.log(err.message)
         })
     }
@@ -688,8 +687,12 @@ export default class FSMenpoBackend implements Backend {
         })
     }
 
-    _fetchAndSetFullyAnnotatedAssets(type: string): Promise<string[]> {
+    _fetchAndSetFullyAnnotatedAssets(type: string): Promise<{}> {
         if (this.callingMenpo) {
+            if (this.menpoCallMessage === 'Fetching completed annotations...') {
+                // Fail silently. We expect these calls to step on each other at times.
+                return new Promise<{}>((resolve) => resolve())
+            }
             return new Promise<{}>((resolve, reject) => reject(new Error('Fetching completed annotations failed - conflict with another Menpo call')))
         }
         const async = loading.start()
