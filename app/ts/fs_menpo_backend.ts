@@ -29,6 +29,7 @@ const MESH_EXTENSIONS = ['obj', 'stl']
 // TODO: revisiting annotated assets causes a phantom change that means it needs to be saved before scrolling! is this a new issue?
 // TODO: scrolling through assets that have already been done and saving them causes them to be resent to the python server!
 // TODO: save completed landmark groups as they are completed and saved (in memory and storage)
+// TODO: make it obvious to the user (though some ui element) that automatic annotation is in effect. In an effort to communicate what the two constraints are!
 
 // promise-polyfill doesn't expose the 'any' function so this is a replacement
 // which resolves with the first resolving promise in the array or rejects
@@ -342,6 +343,7 @@ export default class FSMenpoBackend implements Backend {
     }
 
     addTemplate(path) {
+        // TODO: if there's a duplicate then it appends "-{i}". Is this okay?
 
         const ext = extname(path)
         if (!(ext in Template.Parsers)) {
@@ -708,6 +710,7 @@ export default class FSMenpoBackend implements Backend {
             postPromise.then((json: any) => {
                 for (let assetBaseId in json) {
                     let assetJson = json[assetBaseId]
+                    assetJson.version = 2
                     // Menpofit messes with the connectivity
                     const [ok, ljson]: [boolean, LJSONFile] = softValidateAndCorrect(assetJson, tmpl, 2)
                     if (!ok) {
@@ -732,6 +735,8 @@ export default class FSMenpoBackend implements Backend {
 
     _deformableModelRefreshDue(): boolean {
         return this.automaticAnnotationOn() && (Object.keys(this._fullyAnnotatedAssets).length - this.minimumTrainingAssets) % this.automaticAnnotationInterval === 0
+            && this._toBeTrained.length >= 2
+        // note: the last constraint is due to the backend's inability to increment deformable models with a single image
     }
 
     automaticAnnotationOn(): boolean {
