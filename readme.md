@@ -1,4 +1,12 @@
-# Electron.App
+# [Deprecated] Landmarker.App
+
+```
+This varient of landmarker.io is not activtely maintained.
+
+It's strongly recommended to use the web varient directly instead at
+
+www.landmarker.io
+```
 
 This app allows the user to run [landmarker.io](https://github.com/menpo/landmarker.io) on local files.
 
